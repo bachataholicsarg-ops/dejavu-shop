@@ -1,0 +1,8 @@
+{
+  "defaultCommissionPercent": 10,
+  "commissionBase": "products_subtotal",
+  "excludeShippingFromCommission": true,
+  "trackingQueryParam": "vendedor",
+  "trackingStorageKey": "dv-vendedor",
+  "cookieDays": 30
+}
