@@ -1,0 +1,11 @@
+{
+  "currency": "ARS",
+  "zones": {
+    "CABA": {
+      "free_shipping_minimum": 30000
+    },
+    "Campana": {
+      "free_shipping_minimum": 40000
+    }
+  }
+}
