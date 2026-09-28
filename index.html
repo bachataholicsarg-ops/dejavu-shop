@@ -16,7 +16,12 @@
 <input name="piso_depto" placeholder="Piso / Depto">
 <input name="codigo_postal" placeholder="Código postal">
 <input class="full" name="localidad" required placeholder="Localidad">
-<textarea class="full" name="referencias" placeholder="Referencias para la entrega"></textarea>
+<label>Fecha preferida de entrega<input name="fecha_entrega_preferida" type="date"></label>
+<select name="franja_horaria"><option value="">Horario preferido</option><option>Mañana (9 a 13 hs)</option><option>Tarde (13 a 18 hs)</option><option>Noche (18 a 21 hs)</option><option>Coordinar por WhatsApp</option></select>
+<select name="metodo_pago" required><option value="">Elegí una forma de pago</option><option value="transferencia">Transferencia bancaria</option><option value="efectivo">Efectivo al recibir</option><option value="coordinar">Coordinar forma de pago</option></select>
+<select name="contacto_preferido"><option>WhatsApp</option><option>Llamada</option><option>Email</option></select>
+<textarea class="full" name="referencias" placeholder="Referencias para la entrega o indicaciones adicionales"></textarea>
+<div class="full summary"><b>Opciones de pago</b><br>Transferencia bancaria · Efectivo al recibir · También podés elegir “Coordinar forma de pago”.<br><small>La fecha y el horario son una preferencia: DÉJÀ VU los confirma con vos antes de la entrega.</small></div>
 <div class="full summary" id="shippingSummary"></div>
 <button class="checkout full" type="submit">Confirmar pedido</button>
 </form><div id="orderResult" style="margin-top:14px;font-weight:800"></div></div></div><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script>const SUPABASE_URL="https://mzcmkcernmklmaerxqxu.supabase.co";
