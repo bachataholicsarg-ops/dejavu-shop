@@ -1,0 +1,52 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DÉJÀ VU · Vendedor</title><style>
+:root{--bg:#fbf6ee;--ink:#14363b;--teal:#1f6a6a;--line:#e8e1d7}*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--ink)}.wrap{max-width:1100px;margin:auto;padding:24px}.brand{font-family:Georgia,serif;font-size:30px;font-weight:700}.hero,.card,.kpi{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px}.hero{margin:18px 0;background:linear-gradient(135deg,#eef7f3,#fff2df)}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0}.kpi b{display:block;font-size:24px;margin-top:6px}.muted{color:#687779}.btn{border:0;border-radius:10px;padding:11px 14px;font-weight:800;cursor:pointer}.primary{background:var(--teal);color:#fff}.linkbox{display:flex;gap:8px;flex-wrap:wrap}.linkbox input{flex:1;min-width:240px;padding:11px;border:1px solid var(--line);border-radius:10px}table{width:100%;border-collapse:collapse}th,td{padding:11px;border-bottom:1px solid var(--line);text-align:left;font-size:14px}.badge{display:inline-block;padding:5px 9px;border-radius:999px;background:#eef7f3;font-weight:800}.error{padding:16px;border:1px solid #f1b1a8;background:#fff1ef;border-radius:14px}@media(max-width:800px){.grid{grid-template-columns:1fr 1fr}.card{overflow:auto}}</style></head><body>
+<div class="wrap">
+<div class="brand">♛ DÉJÀ VU · Vendedor</div>
+<div id="loading" class="hero"><h2>Cargando panel...</h2></div>
+<div id="app" style="display:none">
+  <section class="hero">
+    <div class="muted">Panel personal</div>
+    <h1 id="sellerName" style="margin:.2em 0"></h1>
+    <div id="sellerCommission"></div>
+  </section>
+  <div class="grid">
+    <div class="kpi">Pedidos<b id="kOrders">0</b></div>
+    <div class="kpi">Ventas<b id="kSales">$0</b></div>
+    <div class="kpi">Comisión pendiente<b id="kPending">$0</b></div>
+    <div class="kpi">Comisión pagada<b id="kPaid">$0</b></div>
+  </div>
+  <div class="card">
+    <h2>Tu enlace para vender</h2>
+    <p class="muted">Compartí este enlace. Las compras que entren por él quedan asociadas automáticamente a vos.</p>
+    <div class="linkbox"><input id="salesLink" readonly><button class="btn primary" onclick="copyLink()">Copiar enlace</button></div>
+  </div>
+  <div class="card">
+    <h2>Tus pedidos</h2>
+    <table><thead><tr><th>Pedido</th><th>Cliente</th><th>Venta</th><th>Comisión</th><th>Estado</th><th>Fecha</th></tr></thead><tbody id="ordersBody"></tbody></table>
+  </div>
+</div>
+</div>
+<script>
+const U="https://mzcmkcernmklmaerxqxu.supabase.co";
+const K="sb_publishable_FuJzy7ynwi1vHBkwQpQ1vA_Bk6gVZOf";
+const money=n=>new Intl.NumberFormat("es-AR",{style:"currency",currency:"ARS",maximumFractionDigits:0}).format(Number(n||0));
+const token=new URLSearchParams(location.search).get("token")||"";
+
+async function load(){
+ if(!token){loading.innerHTML='<div class="error">Este enlace de vendedor no es válido.</div>';return}
+ const r=await fetch(U+"/functions/v1/vendedor-panel?token="+encodeURIComponent(token),{headers:{apikey:K}});
+ const j=await r.json();
+ if(!r.ok){loading.innerHTML='<div class="error">'+(j.error||"No se pudo abrir el panel.")+'</div>';return}
+ loading.style.display="none";app.style.display="block";
+ sellerName.textContent=j.vendedor.nombre;
+ sellerCommission.textContent="Comisión: "+j.vendedor.porcentaje_comision+"%";
+ kOrders.textContent=j.resumen.pedidos;
+ kSales.textContent=money(j.resumen.ventas);
+ kPending.textContent=money(j.resumen.pendiente);
+ kPaid.textContent=money(j.resumen.pagada);
+ salesLink.value=location.origin+"/?vendedor="+encodeURIComponent(j.vendedor.codigo);
+ ordersBody.innerHTML=j.pedidos.length?j.pedidos.map(p=>'<tr><td>'+p.numero+'</td><td>'+p.cliente_nombre+'</td><td>'+money(p.subtotal)+'</td><td>'+money(p.comision_total)+'</td><td><span class="badge">'+p.estado+'</span></td><td>'+new Date(p.creado_en).toLocaleDateString("es-AR")+'</td></tr>').join(""):'<tr><td colspan="6">Todavía no tenés pedidos.</td></tr>';
+}
+async function copyLink(){await navigator.clipboard.writeText(salesLink.value);alert("Enlace copiado")}
+load();
+</script></body></html>
