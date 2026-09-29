@@ -37,6 +37,9 @@ async function loadProducts(){
  const {data,error}=await sb.from("productos").select("id,nombre,categoria,precio,proveedor_url,imagen_url,activo").eq("activo",true).order("nombre");
  if(error){grid.innerHTML="<p>No se pudo cargar el catálogo.</p>";return}
  P=(data||[]).map(p=>({id:p.id,name:p.nombre,category:p.categoria,price:p.precio,source:p.proveedor_url,image:p.imagen_url}));
+ const validIds=new Set(P.map(p=>p.id));let cleaned=false;
+ Object.keys(C).forEach(id=>{if(!validIds.has(id)){delete C[id];cleaned=true}});
+ if(cleaned)localStorage.setItem("dv-cart",JSON.stringify(C));
  chipsR();render();cartR();
 }
 function chipsR(){
@@ -81,8 +84,8 @@ orderForm.addEventListener("submit",async e=>{
  const body=Object.fromEntries(fd.entries());body.items=items;body.vendedor=vendedor;
  const r=await fetch(SUPABASE_URL+"/functions/v1/crear-pedido",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY},body:JSON.stringify(body)});
  const j=await r.json();
- if(!r.ok){orderResult.textContent=j.error||"No se pudo crear el pedido";return}
- orderResult.textContent="✅ Pedido "+j.pedido+" recibido. Total de productos: "+money(j.total)+".";
+ if(!r.ok){orderResult.textContent=j.error||"No se pudo crear el pedido";orderResult.style.color="#a51f1f";return}
+ orderResult.style.color="#21633c";orderResult.textContent="✅ Pedido "+j.pedido+" recibido. Total de productos: "+money(j.total)+".";
  C={};save();orderForm.reset();
 });
 loadProducts();</script></body></html>
