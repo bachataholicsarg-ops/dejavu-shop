@@ -34,9 +34,9 @@ if(sellerFromUrl)localStorage.setItem("dv-vendedor",sellerFromUrl.toLowerCase())
 const vendedor=localStorage.getItem("dv-vendedor")||"";
 
 async function loadProducts(){
- const {data,error}=await sb.from("productos").select("id,nombre,categoria,precio,proveedor_url,activo").eq("activo",true).order("nombre");
+ const {data,error}=await sb.from("productos").select("id,nombre,categoria,precio,proveedor_url,imagen_url,activo").eq("activo",true).order("nombre");
  if(error){grid.innerHTML="<p>No se pudo cargar el catálogo.</p>";return}
- P=(data||[]).map(p=>({id:p.id,name:p.nombre,category:p.categoria,price:p.precio,source:p.proveedor_url}));
+ P=(data||[]).map(p=>({id:p.id,name:p.nombre,category:p.categoria,price:p.precio,source:p.proveedor_url,image:p.imagen_url}));
  chipsR();render();cartR();
 }
 function chipsR(){
@@ -47,7 +47,7 @@ function render(){
  let q=(search?.value||"").toLowerCase();
  let L=P.filter(p=>(cat==="Todos"||p.category===cat)&&(!q||(p.name+" "+p.category).toLowerCase().includes(q)));
  result.textContent=L.length+" productos";
- grid.innerHTML=L.map(p=>'<article class="card"><div class="pic"><img loading="lazy" src="/api/product-image?url='+encodeURIComponent(p.source||"")+'" alt="'+p.name.replace(/"/g,"&quot;")+'"></div><div class="body"><div class="cat">'+p.category+'</div><div class="name">'+p.name+'</div>'+(p.price?'<div class="price">'+money(p.price)+'</div>':'<div class="consult">Consultar precio</div>')+'<div class="actions"><button class="btn primary" '+(p.price?'onclick="add(\''+p.id+'\')"':'disabled')+'>'+(p.price?'Agregar':'Sin precio')+'</button></div></div></article>').join("");
+ grid.innerHTML=L.map(p=>'<article class="card"><div class="pic"><img loading="lazy" src="'+(p.image||("/api/product-image?url="+encodeURIComponent(p.source||"")))+'" alt="'+p.name.replace(/"/g,"&quot;")+'"></div><div class="body"><div class="cat">'+p.category+'</div><div class="name">'+p.name+'</div>'+(p.price?'<div class="price">'+money(p.price)+'</div>':'<div class="consult">Consultar precio</div>')+'<div class="actions"><button class="btn primary" '+(p.price?'onclick="add(\''+p.id+'\')"':'disabled')+'>'+(p.price?'Agregar':'Sin precio')+'</button></div></div></article>').join("");
 }
 function save(){localStorage.setItem("dv-cart",JSON.stringify(C));cartR()}
 function add(id){C[id]=(C[id]||0)+1;save();toggleCart(true)}
