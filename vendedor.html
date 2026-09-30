@@ -22,7 +22,11 @@
   </div>
   <div class="card">
     <h2>Tus pedidos</h2>
-    <table><thead><tr><th>Pedido</th><th>Cliente</th><th>Venta</th><th>Comisión</th><th>Estado</th><th>Fecha</th></tr></thead><tbody id="ordersBody"></tbody></table>
+    <table><thead><tr><th>Pedido</th><th>Cliente</th><th>Venta</th><th>Comisión</th><th>Pago comisión</th><th>Estado</th><th>Fecha</th></tr></thead><tbody id="ordersBody"></tbody></table>
+  </div>
+  <div class="card">
+    <h2>Historial de pagos de comisión</h2>
+    <table><thead><tr><th>Fecha</th><th>Monto</th><th>Detalle</th></tr></thead><tbody id="paymentsBody"></tbody></table>
   </div>
 </div>
 </div>
@@ -45,7 +49,8 @@ async function load(){
  kPending.textContent=money(j.resumen.pendiente);
  kPaid.textContent=money(j.resumen.pagada);
  salesLink.value=location.origin+"/?vendedor="+encodeURIComponent(j.vendedor.codigo);
- ordersBody.innerHTML=j.pedidos.length?j.pedidos.map(p=>'<tr><td>'+p.numero+'</td><td>'+p.cliente_nombre+'</td><td>'+money(p.subtotal)+'</td><td>'+money(p.comision_total)+'</td><td><span class="badge">'+p.estado+'</span></td><td>'+new Date(p.creado_en).toLocaleDateString("es-AR")+'</td></tr>').join(""):'<tr><td colspan="6">Todavía no tenés pedidos.</td></tr>';
+ ordersBody.innerHTML=j.pedidos.length?j.pedidos.map(p=>'<tr><td>'+p.numero+'</td><td>'+p.cliente_nombre+'</td><td>'+money(p.subtotal)+'</td><td>'+money(p.comision_total)+'</td><td><span class="badge">'+(p.comision_pagada?'Pagada':'Pendiente')+'</span></td><td><span class="badge">'+p.estado+'</span></td><td>'+new Date(p.creado_en).toLocaleDateString("es-AR")+'</td></tr>').join(""):'<tr><td colspan="7">Todavía no tenés pedidos.</td></tr>';
+ paymentsBody.innerHTML=(j.pagos||[]).length?(j.pagos||[]).map(p=>'<tr><td>'+new Date(p.creado_en).toLocaleDateString("es-AR")+'</td><td><b>'+money(p.monto)+'</b></td><td>'+(p.nota||'Pago de comisión')+'</td></tr>').join(""):'<tr><td colspan="3">Todavía no hay pagos registrados.</td></tr>';
 }
 async function copyLink(){await navigator.clipboard.writeText(salesLink.value);alert("Enlace copiado")}
 load();
