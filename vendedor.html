@@ -2,7 +2,15 @@
 :root{--bg:#fbf6ee;--ink:#14363b;--teal:#1f6a6a;--line:#e8e1d7;--danger:#a51f1f}*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--ink)}.wrap{max-width:1180px;margin:auto;padding:24px}.brand{font-family:Georgia,serif;font-size:30px;font-weight:700}.hero,.card,.kpi{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px}.hero{margin:18px 0;background:linear-gradient(135deg,#eef7f3,#fff2df)}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0}.kpi b{display:block;font-size:24px;margin-top:6px}.muted{color:#687779}.btn{border:0;border-radius:10px;padding:11px 14px;font-weight:800;cursor:pointer}.primary{background:var(--teal);color:#fff}.secondary{background:#fff;border:1px solid var(--line);color:var(--ink)}.warn{background:#e9a23b;color:#222}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.tab.active{background:var(--teal);color:#fff}.section.hidden{display:none}.linkbox,.actions{display:flex;gap:8px;flex-wrap:wrap}.linkbox input{flex:1;min-width:240px;padding:11px;border:1px solid var(--line);border-radius:10px}table{width:100%;border-collapse:collapse}th,td{padding:11px;border-bottom:1px solid var(--line);text-align:left;font-size:14px}.badge{display:inline-block;padding:5px 9px;border-radius:999px;background:#eef7f3;font-weight:800}.error,.status.error{padding:12px;border:1px solid #f1b1a8;background:#fff1ef;border-radius:12px;color:var(--danger);font-weight:700}.status.ok{padding:12px;border:1px solid #acd2ba;background:#eef8f2;border-radius:12px;color:#21633c;font-weight:700}.form{display:grid;grid-template-columns:1fr 1fr;gap:10px}.form input,.form select,.form textarea{width:100%;padding:11px;border:1px solid var(--line);border-radius:9px;font:inherit}.form textarea{min-height:90px;resize:vertical}.full{grid-column:1/-1}.field{display:flex;flex-direction:column;gap:5px}.error-text{min-height:15px;color:var(--danger);font-size:12px;font-weight:700}.field-error{border:2px solid #c62828!important;background:#fff7f7}.thumb{width:58px;height:58px;object-fit:cover;border-radius:10px;border:1px solid var(--line);background:#fff}.preview{width:120px;height:120px;object-fit:cover;border:1px solid var(--line);border-radius:14px;display:none}.seller-product-note{font-size:12px;color:#687779}.product-created{font-size:11px;color:#1f6a6a;font-weight:700}@media(max-width:800px){.grid{grid-template-columns:1fr 1fr}.form{grid-template-columns:1fr}.full{grid-column:auto}.card{overflow:auto}}</style></head><body>
 <div class="wrap">
 <div class="brand">♛ DÉJÀ VU · Vendedor</div>
-<div id="loading" class="hero"><h2>Cargando panel...</h2></div>
+<div id="loginBox" class="card" style="max-width:520px;margin:24px auto">
+  <h2>Ingreso de vendedor</h2>
+  <p class="muted">Entrá con el email y la contraseña de tu cuenta DÉJÀ VU.</p>
+  <input id="loginEmail" type="email" placeholder="Email" style="width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;margin:6px 0">
+  <input id="loginPassword" type="password" placeholder="Contraseña" style="width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;margin:6px 0">
+  <div class="actions" style="margin-top:10px"><button class="btn primary" onclick="sellerLogin()">Ingresar</button><button class="btn secondary" onclick="sellerRecover()">Crear / recuperar contraseña</button></div>
+  <div id="loginMsg" style="margin-top:10px;font-weight:700"></div>
+</div>
+<div id="loading" class="hero" style="display:none"><h2>Cargando panel...</h2></div>
 <div id="app" style="display:none">
   <section class="hero">
     <div class="muted">Panel personal</div>
@@ -14,7 +22,7 @@
     <button class="btn secondary tab active" data-tab="inicio" onclick="showTab('inicio',this)">Inicio</button>
     <button class="btn secondary tab" data-tab="pedidos" onclick="showTab('pedidos',this)">Pedidos</button>
     <button class="btn secondary tab" data-tab="productos" onclick="showTab('productos',this)">Productos</button>
-    <button class="btn secondary tab" data-tab="comisiones" onclick="showTab('comisiones',this)">Comisiones</button>
+    <button class="btn secondary tab" data-tab="comisiones" onclick="showTab('comisiones',this)">Comisiones</button><button class="btn secondary" onclick="sellerLogout()">Salir</button>
   </div>
 
   <section id="inicio" class="section">
@@ -34,7 +42,7 @@
   <section id="pedidos" class="section hidden">
     <div class="card">
       <h2>Tus pedidos</h2>
-      <table><thead><tr><th>Pedido</th><th>Cliente</th><th>Venta</th><th>Comisión</th><th>Pago comisión</th><th>Estado</th><th>Fecha</th></tr></thead><tbody id="ordersBody"></tbody></table>
+      <table><thead><tr><th>Pedido</th><th>Cliente</th><th>Productos</th><th>Total</th><th>Comisión</th><th>Pago comisión</th><th>Estado</th><th>Fecha</th></tr></thead><tbody id="ordersBody"></tbody></table>
     </div>
   </section>
 
@@ -71,37 +79,43 @@
   </section>
 </div>
 </div>
-<script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script>
 const U="https://mzcmkcernmklmaerxqxu.supabase.co";
 const K="sb_publishable_FuJzy7ynwi1vHBkwQpQ1vA_Bk6gVZOf";
+const sb=supabase.createClient(U,K);
 const money=n=>new Intl.NumberFormat("es-AR",{style:"currency",currency:"ARS",maximumFractionDigits:0}).format(Number(n||0));
-const token=new URLSearchParams(location.search).get("token")||"";
 let products=[],editingProductId=null,currentSeller=null;
+async function authHeaders(){const {data:{session}}=await sb.auth.getSession();return {apikey:K,Authorization:"Bearer "+(session?.access_token||"")}}
+async function sellerLogin(){loginMsg.textContent="Ingresando...";const {error}=await sb.auth.signInWithPassword({email:loginEmail.value.trim(),password:loginPassword.value});if(error){loginMsg.textContent="Email o contraseña incorrectos.";return}loginMsg.textContent="";await load()}
+async function sellerRecover(){const mail=loginEmail.value.trim();if(!mail){loginMsg.textContent="Ingresá tu email.";return}loginMsg.textContent="Enviando acceso...";const {error}=await sb.auth.resetPasswordForEmail(mail,{redirectTo:"https://dejavu-shop.vercel.app/reset-password.html"});loginMsg.textContent=error?error.message:"Te enviamos un enlace para crear o recuperar tu contraseña."}
+async function sellerLogout(){await sb.auth.signOut();location.reload()}
 
 function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
 function showTab(id,btn){document.querySelectorAll(".section").forEach(x=>x.classList.add("hidden"));document.getElementById(id).classList.remove("hidden");document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));if(btn)btn.classList.add("active");if(id==="productos")loadProducts()}
 async function load(){
- if(!token){loading.innerHTML='<div class="error">Este enlace de vendedor no es válido.</div>';return}
- const r=await fetch(U+"/functions/v1/vendedor-panel?token="+encodeURIComponent(token),{headers:{apikey:K}});
+ const {data:{session}}=await sb.auth.getSession();
+ if(!session){loginBox.style.display="block";loading.style.display="none";app.style.display="none";return}
+ loginBox.style.display="none";loading.style.display="block";app.style.display="none";
+ const r=await fetch(U+"/functions/v1/vendedor-panel",{headers:await authHeaders()});
  const j=await r.json();
- if(!r.ok){loading.innerHTML='<div class="error">'+esc(j.error||"No se pudo abrir el panel.")+'</div>';return}
+ if(!r.ok){await sb.auth.signOut();loading.style.display="none";loginBox.style.display="block";loginMsg.textContent=esc(j.error||"No se pudo abrir el panel.");return}
  currentSeller=j.vendedor;
  loading.style.display="none";app.style.display="block";
  sellerName.textContent=j.vendedor.nombre;
- sellerCommission.textContent="Comisión: "+j.vendedor.porcentaje_comision+"%";
+ sellerCommission.textContent="Comisión: "+j.vendedor.porcentaje_comision+"% · "+j.vendedor.email;
  kOrders.textContent=j.resumen.pedidos;
  kSales.textContent=money(j.resumen.ventas);
  kPending.textContent=money(j.resumen.pendiente);
  kPaid.textContent=money(j.resumen.pagada);
  salesLink.value=location.origin+"/?vendedor="+encodeURIComponent(j.vendedor.codigo);
- ordersBody.innerHTML=j.pedidos.length?j.pedidos.map(p=>'<tr><td>'+esc(p.numero)+'</td><td>'+esc(p.cliente_nombre)+'</td><td>'+money(p.subtotal)+'</td><td>'+money(p.comision_total)+'</td><td><span class="badge">'+(p.comision_pagada?'Pagada':'Pendiente')+'</span></td><td><span class="badge">'+esc(p.estado)+'</span></td><td>'+new Date(p.creado_en).toLocaleDateString("es-AR")+'</td></tr>').join(""):'<tr><td colspan="7">Todavía no tenés pedidos.</td></tr>';
+ ordersBody.innerHTML=j.pedidos.length?j.pedidos.map(p=>'<tr><td><b>'+esc(p.numero)+'</b></td><td>'+esc(p.cliente_nombre)+'<br><small>'+esc(p.cliente_whatsapp||"")+'</small></td><td>'+(p.items||[]).map(it=>esc(it.cantidad)+" × "+esc(it.producto_nombre)).join("<br>")+'</td><td>'+money(p.total)+'</td><td>'+money(p.comision_total)+'</td><td><span class="badge">'+(p.comision_pagada?'Pagada':'Pendiente')+'</span></td><td><span class="badge">'+esc(p.estado)+'</span><br><small>Pago: '+esc(p.estado_pago||"pendiente")+'</small></td><td>'+new Date(p.creado_en).toLocaleDateString("es-AR")+'</td></tr>').join(""):'<tr><td colspan="8">Todavía no tenés pedidos.</td></tr>';
  paymentsBody.innerHTML=(j.pagos||[]).length?(j.pagos||[]).map(p=>'<tr><td>'+new Date(p.creado_en).toLocaleDateString("es-AR")+'</td><td><b>'+money(p.monto)+'</b></td><td>'+esc(p.nota||'Pago de comisión')+'</td></tr>').join(""):'<tr><td colspan="3">Todavía no hay pagos registrados.</td></tr>';
 }
 async function copyLink(){try{await navigator.clipboard.writeText(salesLink.value);salesLink.select()}catch{}}
 
 async function loadProducts(){
  productsBody.innerHTML='<tr><td colspan="6">Cargando productos...</td></tr>';
- const r=await fetch(U+"/functions/v1/vendedor-productos?token="+encodeURIComponent(token),{headers:{apikey:K}});
+ const r=await fetch(U+"/functions/v1/vendedor-productos",{headers:await authHeaders()});
  const j=await r.json();
  if(!r.ok){productsBody.innerHTML='<tr><td colspan="6"><div class="error">'+esc(j.error||"No se pudieron cargar los productos.")+'</div></td></tr>';return}
  products=j.productos||[];
@@ -115,7 +129,7 @@ function fieldError(name,msg){const el=productForm.elements[name];if(el)el.class
 function status(msg,ok=false){productStatus.className="full status "+(ok?"ok":"error");productStatus.textContent=msg}
 function editProduct(id){const p=products.find(x=>x.id===id);if(!p)return;editingProductId=id;productTitle.textContent="Editar producto";productSaveBtn.textContent="Guardar cambios";cancelProductBtn.style.display="inline-block";for(const k of ["nombre","slug","categoria","stock","descripcion","costo","precio","proveedor_url"])productForm.elements[k].value=p[k]??"";if(p.imagen_url){sellerPreview.src=p.imagen_url;sellerPreview.style.display="block"}else sellerPreview.style.display="none";sellerPrice.dataset.manual="1";productForm.scrollIntoView({behavior:"smooth",block:"start"})}
 function cancelProductEdit(){editingProductId=null;productForm.reset();productTitle.textContent="Cargar producto";productSaveBtn.textContent="Guardar producto";cancelProductBtn.style.display="none";sellerPreview.style.display="none";delete sellerPrice.dataset.manual;clearErrors()}
-async function toggleProduct(id,activo){const r=await fetch(U+"/functions/v1/vendedor-productos?token="+encodeURIComponent(token),{method:"PATCH",headers:{"Content-Type":"application/json",apikey:K},body:JSON.stringify({id,activo:!activo})});const j=await r.json();if(!r.ok){status(j.error||"No se pudo cambiar el estado.");return}await loadProducts()}
+async function toggleProduct(id,activo){const r=await fetch(U+"/functions/v1/vendedor-productos",{method:"PATCH",headers:{...(await authHeaders()),"Content-Type":"application/json"},body:JSON.stringify({id,activo:!activo})});const j=await r.json();if(!r.ok){status(j.error||"No se pudo cambiar el estado.");return}await loadProducts()}
 sellerCost.addEventListener("input",()=>{if(!sellerPrice.dataset.manual)sellerPrice.value=sellerCost.value?Number(sellerCost.value)*2:""});
 sellerPrice.addEventListener("input",()=>sellerPrice.dataset.manual="1");
 sellerPhoto.addEventListener("change",()=>{const f=sellerPhoto.files?.[0];if(!f)return;sellerPreview.src=URL.createObjectURL(f);sellerPreview.style.display="block"});
@@ -138,12 +152,12 @@ productForm.addEventListener("submit",async e=>{
  if(file&&file.size){body.imagen_base64=await fileToDataUrl(file);body.imagen_mime=file.type}
  productSaveBtn.disabled=true;productSaveBtn.textContent="Guardando...";
  try{
-   const r=await fetch(U+"/functions/v1/vendedor-productos?token="+encodeURIComponent(token),{method:"POST",headers:{"Content-Type":"application/json",apikey:K},body:JSON.stringify(body)});
+   const r=await fetch(U+"/functions/v1/vendedor-productos",{method:"POST",headers:{...(await authHeaders()),"Content-Type":"application/json"},body:JSON.stringify(body)});
    const j=await r.json();
    if(!r.ok){status(j.error||"No se pudo guardar el producto.");return}
    cancelProductEdit();status("Producto guardado correctamente.",true);await loadProducts();
  }catch{status("No se pudo conectar con el sistema de productos.")}
  finally{productSaveBtn.disabled=false;if(!editingProductId)productSaveBtn.textContent="Guardar producto"}
 });
-load();
+sb.auth.onAuthStateChange(()=>load());load();
 </script></body></html>
