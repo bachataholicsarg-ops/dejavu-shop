@@ -11,7 +11,16 @@
 <form id="productForm" class="form" novalidate>
 <div class="field"><input name="nombre" required placeholder="Nombre"><div class="error-text" data-error-for="nombre"></div></div>
 <div class="field"><input name="slug" placeholder="Código/slug (si lo dejás vacío se genera solo)"><div class="error-text" data-error-for="slug"></div></div>
-<div class="field"><input name="categoria" required placeholder="Categoría"><div class="error-text" data-error-for="categoria"></div></div><div class="field full"><textarea name="descripcion" maxlength="220" placeholder="Breve descripción del producto (máx. 220 caracteres)"></textarea><div class="error-text" data-error-for="descripcion"></div></div>
+<div class="field"><select name="categoria">
+<option value="">Elegí una categoría</option>
+<option value="Bebés">Bebés</option>
+<option value="Mascotas">Mascotas</option>
+<option value="Hogar">Hogar</option>
+<option value="Gadgets/electrónica">Gadgets / electrónica</option>
+<option value="Cocina">Cocina</option>
+<option value="Bienestar">Bienestar</option>
+<option value="Ofertas">Ofertas</option>
+</select><div class="error-text" data-error-for="categoria"></div></div><div class="field full"><textarea name="descripcion" maxlength="220" placeholder="Breve descripción del producto (máx. 220 caracteres)"></textarea><div class="error-text" data-error-for="descripcion"></div></div>
 <div class="field"><input name="costo" id="productCost" type="number" step="0.01" min="0" placeholder="Costo"><div class="error-text" data-error-for="costo"></div></div>
 <div class="field"><input name="precio" id="productPrice" type="number" step="0.01" min="0" placeholder="Precio de venta"><div class="error-text" data-error-for="precio"></div></div>
 <div class="field"><input name="stock" type="number" min="0" placeholder="Stock (vacío = sin control)"><div class="error-text" data-error-for="stock"></div><small>Dejalo vacío si todavía no vas a controlar stock. Si ponés 0, se muestra agotado.</small></div>
