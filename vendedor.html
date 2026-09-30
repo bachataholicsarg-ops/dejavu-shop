@@ -82,7 +82,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script>
 const U="https://mzcmkcernmklmaerxqxu.supabase.co";
 const K="sb_publishable_FuJzy7ynwi1vHBkwQpQ1vA_Bk6gVZOf";
-const sb=supabase.createClient(U,K);
+const sb=supabase.createClient(U,K,{auth:{storageKey:"dejavu-seller-auth"}});
 const money=n=>new Intl.NumberFormat("es-AR",{style:"currency",currency:"ARS",maximumFractionDigits:0}).format(Number(n||0));
 let products=[],editingProductId=null,currentSeller=null;
 async function authHeaders(){const {data:{session}}=await sb.auth.getSession();return {apikey:K,Authorization:"Bearer "+(session?.access_token||"")}}
