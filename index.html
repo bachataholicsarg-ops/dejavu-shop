@@ -27,7 +27,14 @@
 <div class="full summary" id="shippingSummary"></div>
 <div id="checkoutStatus" class="full"></div>
 <button class="checkout full" id="submitOrderBtn" type="submit">Confirmar pedido</button>
-</form><div id="orderResult" style="margin-top:14px;font-weight:800"></div></div></div><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script>const SUPABASE_URL="https://mzcmkcernmklmaerxqxu.supabase.co";
+</form><div id="orderResult" style="margin-top:14px;font-weight:800"></div></div></div><script>
+(function(){
+  const h=location.hash||"";
+  if(h.includes("access_token=") && (h.includes("type=invite") || h.includes("type=recovery"))){
+    location.replace("/reset-password.html"+h);
+  }
+})();
+</script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script>const SUPABASE_URL="https://mzcmkcernmklmaerxqxu.supabase.co";
 const SUPABASE_KEY="sb_publishable_FuJzy7ynwi1vHBkwQpQ1vA_Bk6gVZOf";
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let P=[],cat="Todos",C=JSON.parse(localStorage.getItem("dv-cart")||"{}");
