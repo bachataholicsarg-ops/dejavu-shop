@@ -1,5 +1,5 @@
 <!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DÉJÀ VU · Vendedor</title><style>
-:root{--bg:#fbf6ee;--ink:#14363b;--teal:#1f6a6a;--line:#e8e1d7}*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--ink)}.wrap{max-width:1100px;margin:auto;padding:24px}.brand{font-family:Georgia,serif;font-size:30px;font-weight:700}.hero,.card,.kpi{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px}.hero{margin:18px 0;background:linear-gradient(135deg,#eef7f3,#fff2df)}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0}.kpi b{display:block;font-size:24px;margin-top:6px}.muted{color:#687779}.btn{border:0;border-radius:10px;padding:11px 14px;font-weight:800;cursor:pointer}.primary{background:var(--teal);color:#fff}.linkbox{display:flex;gap:8px;flex-wrap:wrap}.linkbox input{flex:1;min-width:240px;padding:11px;border:1px solid var(--line);border-radius:10px}table{width:100%;border-collapse:collapse}th,td{padding:11px;border-bottom:1px solid var(--line);text-align:left;font-size:14px}.badge{display:inline-block;padding:5px 9px;border-radius:999px;background:#eef7f3;font-weight:800}.error{padding:16px;border:1px solid #f1b1a8;background:#fff1ef;border-radius:14px}@media(max-width:800px){.grid{grid-template-columns:1fr 1fr}.card{overflow:auto}}</style></head><body>
+:root{--bg:#fbf6ee;--ink:#14363b;--teal:#1f6a6a;--line:#e8e1d7;--danger:#a51f1f}*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--ink)}.wrap{max-width:1180px;margin:auto;padding:24px}.brand{font-family:Georgia,serif;font-size:30px;font-weight:700}.hero,.card,.kpi{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px}.hero{margin:18px 0;background:linear-gradient(135deg,#eef7f3,#fff2df)}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:16px 0}.kpi b{display:block;font-size:24px;margin-top:6px}.muted{color:#687779}.btn{border:0;border-radius:10px;padding:11px 14px;font-weight:800;cursor:pointer}.primary{background:var(--teal);color:#fff}.secondary{background:#fff;border:1px solid var(--line);color:var(--ink)}.warn{background:#e9a23b;color:#222}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.tab.active{background:var(--teal);color:#fff}.section.hidden{display:none}.linkbox,.actions{display:flex;gap:8px;flex-wrap:wrap}.linkbox input{flex:1;min-width:240px;padding:11px;border:1px solid var(--line);border-radius:10px}table{width:100%;border-collapse:collapse}th,td{padding:11px;border-bottom:1px solid var(--line);text-align:left;font-size:14px}.badge{display:inline-block;padding:5px 9px;border-radius:999px;background:#eef7f3;font-weight:800}.error,.status.error{padding:12px;border:1px solid #f1b1a8;background:#fff1ef;border-radius:12px;color:var(--danger);font-weight:700}.status.ok{padding:12px;border:1px solid #acd2ba;background:#eef8f2;border-radius:12px;color:#21633c;font-weight:700}.form{display:grid;grid-template-columns:1fr 1fr;gap:10px}.form input,.form select,.form textarea{width:100%;padding:11px;border:1px solid var(--line);border-radius:9px;font:inherit}.form textarea{min-height:90px;resize:vertical}.full{grid-column:1/-1}.field{display:flex;flex-direction:column;gap:5px}.error-text{min-height:15px;color:var(--danger);font-size:12px;font-weight:700}.field-error{border:2px solid #c62828!important;background:#fff7f7}.thumb{width:58px;height:58px;object-fit:cover;border-radius:10px;border:1px solid var(--line);background:#fff}.preview{width:120px;height:120px;object-fit:cover;border:1px solid var(--line);border-radius:14px;display:none}.seller-product-note{font-size:12px;color:#687779}.product-created{font-size:11px;color:#1f6a6a;font-weight:700}@media(max-width:800px){.grid{grid-template-columns:1fr 1fr}.form{grid-template-columns:1fr}.full{grid-column:auto}.card{overflow:auto}}</style></head><body>
 <div class="wrap">
 <div class="brand">♛ DÉJÀ VU · Vendedor</div>
 <div id="loading" class="hero"><h2>Cargando panel...</h2></div>
@@ -9,25 +9,66 @@
     <h1 id="sellerName" style="margin:.2em 0"></h1>
     <div id="sellerCommission"></div>
   </section>
-  <div class="grid">
-    <div class="kpi">Pedidos<b id="kOrders">0</b></div>
-    <div class="kpi">Ventas<b id="kSales">$0</b></div>
-    <div class="kpi">Comisión pendiente<b id="kPending">$0</b></div>
-    <div class="kpi">Comisión pagada<b id="kPaid">$0</b></div>
+
+  <div class="tabs">
+    <button class="btn secondary tab active" data-tab="inicio" onclick="showTab('inicio',this)">Inicio</button>
+    <button class="btn secondary tab" data-tab="pedidos" onclick="showTab('pedidos',this)">Pedidos</button>
+    <button class="btn secondary tab" data-tab="productos" onclick="showTab('productos',this)">Productos</button>
+    <button class="btn secondary tab" data-tab="comisiones" onclick="showTab('comisiones',this)">Comisiones</button>
   </div>
-  <div class="card">
-    <h2>Tu enlace para vender</h2>
-    <p class="muted">Compartí este enlace. Las compras que entren por él quedan asociadas automáticamente a vos.</p>
-    <div class="linkbox"><input id="salesLink" readonly><button class="btn primary" onclick="copyLink()">Copiar enlace</button></div>
-  </div>
-  <div class="card">
-    <h2>Tus pedidos</h2>
-    <table><thead><tr><th>Pedido</th><th>Cliente</th><th>Venta</th><th>Comisión</th><th>Pago comisión</th><th>Estado</th><th>Fecha</th></tr></thead><tbody id="ordersBody"></tbody></table>
-  </div>
-  <div class="card">
-    <h2>Historial de pagos de comisión</h2>
-    <table><thead><tr><th>Fecha</th><th>Monto</th><th>Detalle</th></tr></thead><tbody id="paymentsBody"></tbody></table>
-  </div>
+
+  <section id="inicio" class="section">
+    <div class="grid">
+      <div class="kpi">Pedidos<b id="kOrders">0</b></div>
+      <div class="kpi">Ventas<b id="kSales">$0</b></div>
+      <div class="kpi">Comisión pendiente<b id="kPending">$0</b></div>
+      <div class="kpi">Comisión pagada<b id="kPaid">$0</b></div>
+    </div>
+    <div class="card">
+      <h2>Tu enlace para vender</h2>
+      <p class="muted">Compartí este enlace. Las compras que entren por él quedan asociadas automáticamente a vos.</p>
+      <div class="linkbox"><input id="salesLink" readonly><button class="btn primary" onclick="copyLink()">Copiar enlace</button></div>
+    </div>
+  </section>
+
+  <section id="pedidos" class="section hidden">
+    <div class="card">
+      <h2>Tus pedidos</h2>
+      <table><thead><tr><th>Pedido</th><th>Cliente</th><th>Venta</th><th>Comisión</th><th>Pago comisión</th><th>Estado</th><th>Fecha</th></tr></thead><tbody id="ordersBody"></tbody></table>
+    </div>
+  </section>
+
+  <section id="productos" class="section hidden">
+    <div class="card">
+      <h2 id="productTitle">Cargar producto</h2>
+      <p class="muted">Los productos que cargues aparecen en el catálogo general de DÉJÀ VU. También podés editar, pausar o volver a activar productos.</p>
+      <form id="productForm" class="form" novalidate>
+        <div class="field"><input name="nombre" placeholder="Nombre del producto"><div class="error-text" data-error="nombre"></div></div>
+        <div class="field"><input name="slug" placeholder="Código / slug (opcional)"><div class="error-text" data-error="slug"></div></div>
+        <div class="field"><input name="categoria" placeholder="Categoría"><div class="error-text" data-error="categoria"></div></div>
+        <div class="field"><input name="stock" type="number" min="0" placeholder="Stock (vacío = sin control)"><div class="error-text" data-error="stock"></div></div>
+        <div class="field full"><textarea name="descripcion" maxlength="220" placeholder="Breve descripción del producto"></textarea><div class="error-text" data-error="descripcion"></div></div>
+        <div class="field"><input name="costo" id="sellerCost" type="number" min="0" step="0.01" placeholder="Costo"><div class="error-text" data-error="costo"></div></div>
+        <div class="field"><input name="precio" id="sellerPrice" type="number" min="0" step="0.01" placeholder="Precio de venta"><div class="error-text" data-error="precio"></div></div>
+        <div class="field full"><input name="proveedor_url" placeholder="Enlace del proveedor (https://...)"><div class="error-text" data-error="proveedor_url"></div></div>
+        <div class="field"><label><b>Foto</b></label><input name="foto" id="sellerPhoto" type="file" accept="image/jpeg,image/png,image/webp"><div class="error-text" data-error="foto"></div><small class="seller-product-note">JPG, PNG o WEBP. Máximo 5 MB.</small></div>
+        <div><img id="sellerPreview" class="preview" alt="Vista previa"></div>
+        <div id="productStatus" class="full"></div>
+        <div class="full actions"><button class="btn primary" id="productSaveBtn" type="submit">Guardar producto</button><button class="btn secondary" id="cancelProductBtn" type="button" style="display:none" onclick="cancelProductEdit()">Cancelar edición</button></div>
+      </form>
+    </div>
+    <div class="card">
+      <h2>Productos</h2>
+      <table><thead><tr><th>Foto</th><th>Producto</th><th>Precio</th><th>Stock</th><th>Estado</th><th>Acciones</th></tr></thead><tbody id="productsBody"></tbody></table>
+    </div>
+  </section>
+
+  <section id="comisiones" class="section hidden">
+    <div class="card">
+      <h2>Historial de pagos de comisión</h2>
+      <table><thead><tr><th>Fecha</th><th>Monto</th><th>Detalle</th></tr></thead><tbody id="paymentsBody"></tbody></table>
+    </div>
+  </section>
 </div>
 </div>
 <script>
@@ -35,12 +76,16 @@ const U="https://mzcmkcernmklmaerxqxu.supabase.co";
 const K="sb_publishable_FuJzy7ynwi1vHBkwQpQ1vA_Bk6gVZOf";
 const money=n=>new Intl.NumberFormat("es-AR",{style:"currency",currency:"ARS",maximumFractionDigits:0}).format(Number(n||0));
 const token=new URLSearchParams(location.search).get("token")||"";
+let products=[],editingProductId=null,currentSeller=null;
 
+function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+function showTab(id,btn){document.querySelectorAll(".section").forEach(x=>x.classList.add("hidden"));document.getElementById(id).classList.remove("hidden");document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));if(btn)btn.classList.add("active");if(id==="productos")loadProducts()}
 async function load(){
  if(!token){loading.innerHTML='<div class="error">Este enlace de vendedor no es válido.</div>';return}
  const r=await fetch(U+"/functions/v1/vendedor-panel?token="+encodeURIComponent(token),{headers:{apikey:K}});
  const j=await r.json();
- if(!r.ok){loading.innerHTML='<div class="error">'+(j.error||"No se pudo abrir el panel.")+'</div>';return}
+ if(!r.ok){loading.innerHTML='<div class="error">'+esc(j.error||"No se pudo abrir el panel.")+'</div>';return}
+ currentSeller=j.vendedor;
  loading.style.display="none";app.style.display="block";
  sellerName.textContent=j.vendedor.nombre;
  sellerCommission.textContent="Comisión: "+j.vendedor.porcentaje_comision+"%";
@@ -49,9 +94,56 @@ async function load(){
  kPending.textContent=money(j.resumen.pendiente);
  kPaid.textContent=money(j.resumen.pagada);
  salesLink.value=location.origin+"/?vendedor="+encodeURIComponent(j.vendedor.codigo);
- ordersBody.innerHTML=j.pedidos.length?j.pedidos.map(p=>'<tr><td>'+p.numero+'</td><td>'+p.cliente_nombre+'</td><td>'+money(p.subtotal)+'</td><td>'+money(p.comision_total)+'</td><td><span class="badge">'+(p.comision_pagada?'Pagada':'Pendiente')+'</span></td><td><span class="badge">'+p.estado+'</span></td><td>'+new Date(p.creado_en).toLocaleDateString("es-AR")+'</td></tr>').join(""):'<tr><td colspan="7">Todavía no tenés pedidos.</td></tr>';
- paymentsBody.innerHTML=(j.pagos||[]).length?(j.pagos||[]).map(p=>'<tr><td>'+new Date(p.creado_en).toLocaleDateString("es-AR")+'</td><td><b>'+money(p.monto)+'</b></td><td>'+(p.nota||'Pago de comisión')+'</td></tr>').join(""):'<tr><td colspan="3">Todavía no hay pagos registrados.</td></tr>';
+ ordersBody.innerHTML=j.pedidos.length?j.pedidos.map(p=>'<tr><td>'+esc(p.numero)+'</td><td>'+esc(p.cliente_nombre)+'</td><td>'+money(p.subtotal)+'</td><td>'+money(p.comision_total)+'</td><td><span class="badge">'+(p.comision_pagada?'Pagada':'Pendiente')+'</span></td><td><span class="badge">'+esc(p.estado)+'</span></td><td>'+new Date(p.creado_en).toLocaleDateString("es-AR")+'</td></tr>').join(""):'<tr><td colspan="7">Todavía no tenés pedidos.</td></tr>';
+ paymentsBody.innerHTML=(j.pagos||[]).length?(j.pagos||[]).map(p=>'<tr><td>'+new Date(p.creado_en).toLocaleDateString("es-AR")+'</td><td><b>'+money(p.monto)+'</b></td><td>'+esc(p.nota||'Pago de comisión')+'</td></tr>').join(""):'<tr><td colspan="3">Todavía no hay pagos registrados.</td></tr>';
 }
-async function copyLink(){await navigator.clipboard.writeText(salesLink.value);alert("Enlace copiado")}
+async function copyLink(){try{await navigator.clipboard.writeText(salesLink.value);salesLink.select()}catch{}}
+
+async function loadProducts(){
+ productsBody.innerHTML='<tr><td colspan="6">Cargando productos...</td></tr>';
+ const r=await fetch(U+"/functions/v1/vendedor-productos?token="+encodeURIComponent(token),{headers:{apikey:K}});
+ const j=await r.json();
+ if(!r.ok){productsBody.innerHTML='<tr><td colspan="6"><div class="error">'+esc(j.error||"No se pudieron cargar los productos.")+'</div></td></tr>';return}
+ products=j.productos||[];
+ renderProducts();
+}
+function renderProducts(){
+ productsBody.innerHTML=products.length?products.map(p=>'<tr><td>'+(p.imagen_url?'<img class="thumb" src="'+esc(p.imagen_url)+'" alt="">':'—')+'</td><td><b>'+esc(p.nombre)+'</b><br><small>'+esc(p.categoria||"")+'</small>'+(currentSeller&&p.creado_por_vendedor_id===currentSeller.id?'<br><span class="product-created">Cargado por vos</span>':'')+'</td><td>'+(p.precio==null?'Sin precio':money(p.precio))+'</td><td>'+(p.stock==null?'Sin control':p.stock)+'</td><td><span class="badge">'+(p.activo?'Activo':'Pausado')+'</span></td><td><div class="actions"><button class="btn secondary" onclick="editProduct(\''+p.id+'\')">Editar</button><button class="btn warn" onclick="toggleProduct(\''+p.id+'\','+p.activo+')">'+(p.activo?'Pausar':'Activar')+'</button></div></td></tr>').join(""):'<tr><td colspan="6">No hay productos cargados.</td></tr>';
+}
+function clearErrors(){productForm.querySelectorAll(".field-error").forEach(x=>x.classList.remove("field-error"));productForm.querySelectorAll("[data-error]").forEach(x=>x.textContent="");productStatus.className="full";productStatus.textContent=""}
+function fieldError(name,msg){const el=productForm.elements[name];if(el)el.classList.add("field-error");const box=productForm.querySelector('[data-error="'+name+'"]');if(box)box.textContent=msg}
+function status(msg,ok=false){productStatus.className="full status "+(ok?"ok":"error");productStatus.textContent=msg}
+function editProduct(id){const p=products.find(x=>x.id===id);if(!p)return;editingProductId=id;productTitle.textContent="Editar producto";productSaveBtn.textContent="Guardar cambios";cancelProductBtn.style.display="inline-block";for(const k of ["nombre","slug","categoria","stock","descripcion","costo","precio","proveedor_url"])productForm.elements[k].value=p[k]??"";if(p.imagen_url){sellerPreview.src=p.imagen_url;sellerPreview.style.display="block"}else sellerPreview.style.display="none";sellerPrice.dataset.manual="1";productForm.scrollIntoView({behavior:"smooth",block:"start"})}
+function cancelProductEdit(){editingProductId=null;productForm.reset();productTitle.textContent="Cargar producto";productSaveBtn.textContent="Guardar producto";cancelProductBtn.style.display="none";sellerPreview.style.display="none";delete sellerPrice.dataset.manual;clearErrors()}
+async function toggleProduct(id,activo){const r=await fetch(U+"/functions/v1/vendedor-productos?token="+encodeURIComponent(token),{method:"PATCH",headers:{"Content-Type":"application/json",apikey:K},body:JSON.stringify({id,activo:!activo})});const j=await r.json();if(!r.ok){status(j.error||"No se pudo cambiar el estado.");return}await loadProducts()}
+sellerCost.addEventListener("input",()=>{if(!sellerPrice.dataset.manual)sellerPrice.value=sellerCost.value?Number(sellerCost.value)*2:""});
+sellerPrice.addEventListener("input",()=>sellerPrice.dataset.manual="1");
+sellerPhoto.addEventListener("change",()=>{const f=sellerPhoto.files?.[0];if(!f)return;sellerPreview.src=URL.createObjectURL(f);sellerPreview.style.display="block"});
+productForm.querySelectorAll("input,textarea,select").forEach(el=>el.addEventListener("input",()=>{el.classList.remove("field-error");const box=productForm.querySelector('[data-error="'+el.name+'"]');if(box)box.textContent=""}));
+function fileToDataUrl(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(file)})}
+productForm.addEventListener("submit",async e=>{
+ e.preventDefault();clearErrors();
+ const fd=new FormData(productForm),file=fd.get("foto");fd.delete("foto");
+ const body=Object.fromEntries(fd.entries());
+ body.nombre=String(body.nombre||"").trim();body.categoria=String(body.categoria||"").trim();body.descripcion=String(body.descripcion||"").trim();
+ let bad=false;if(!body.nombre){fieldError("nombre","Ingresá el nombre.");bad=true}if(!body.categoria){fieldError("categoria","Ingresá una categoría.");bad=true}
+ if(body.descripcion.length>220){fieldError("descripcion","Máximo 220 caracteres.");bad=true}
+ if(body.proveedor_url&&!/^https?:\/\//i.test(String(body.proveedor_url))){fieldError("proveedor_url","El enlace debe empezar con http:// o https://.");bad=true}
+ if(body.costo!==""&&Number(body.costo)<0){fieldError("costo","No puede ser negativo.");bad=true}
+ if(body.precio!==""&&Number(body.precio)<0){fieldError("precio","No puede ser negativo.");bad=true}
+ if(body.stock!==""&&Number(body.stock)<0){fieldError("stock","No puede ser negativo.");bad=true}
+ if(file&&file.size>5*1024*1024){fieldError("foto","La imagen no puede superar 5 MB.");bad=true}
+ if(bad){status("Revisá los campos marcados en rojo.");return}
+ if(editingProductId)body.id=editingProductId;
+ if(file&&file.size){body.imagen_base64=await fileToDataUrl(file);body.imagen_mime=file.type}
+ productSaveBtn.disabled=true;productSaveBtn.textContent="Guardando...";
+ try{
+   const r=await fetch(U+"/functions/v1/vendedor-productos?token="+encodeURIComponent(token),{method:"POST",headers:{"Content-Type":"application/json",apikey:K},body:JSON.stringify(body)});
+   const j=await r.json();
+   if(!r.ok){status(j.error||"No se pudo guardar el producto.");return}
+   cancelProductEdit();status("Producto guardado correctamente.",true);await loadProducts();
+ }catch{status("No se pudo conectar con el sistema de productos.")}
+ finally{productSaveBtn.disabled=false;if(!editingProductId)productSaveBtn.textContent="Guardar producto"}
+});
 load();
 </script></body></html>
