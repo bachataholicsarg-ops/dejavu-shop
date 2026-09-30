@@ -6,7 +6,10 @@
   <h2>Ingreso de vendedor</h2>
   <p class="muted">Entrá con el email y la contraseña de tu cuenta DÉJÀ VU.</p>
   <input id="loginEmail" type="email" placeholder="Email" style="width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;margin:6px 0">
-  <input id="loginPassword" type="password" placeholder="Contraseña" style="width:100%;padding:12px;border:1px solid var(--line);border-radius:10px;margin:6px 0">
+  <div style="position:relative">
+  <input id="loginPassword" type="password" placeholder="Contraseña" style="width:100%;padding:12px 48px 12px 12px;border:1px solid var(--line);border-radius:10px;margin:6px 0">
+  <button type="button" aria-label="Mostrar u ocultar contraseña" onclick="toggleSellerPassword()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);border:0;background:transparent;font-size:22px;cursor:pointer;padding:6px">👁️</button>
+</div>
   <div class="actions" style="margin-top:10px"><button class="btn primary" onclick="sellerLogin()">Ingresar</button><button id="recoverBtn" class="btn secondary" onclick="sellerRecover()">Crear / recuperar contraseña</button></div>
   <div id="loginMsg" style="margin-top:10px;font-weight:700"></div>
 </div>
@@ -95,6 +98,7 @@ const sb=supabase.createClient(U,K,{auth:{storageKey:"dejavu-seller-auth"}});
 const money=n=>new Intl.NumberFormat("es-AR",{style:"currency",currency:"ARS",maximumFractionDigits:0}).format(Number(n||0));
 let products=[],editingProductId=null,currentSeller=null;
 async function authHeaders(){const {data:{session}}=await sb.auth.getSession();return {apikey:K,Authorization:"Bearer "+(session?.access_token||"")}}
+function toggleSellerPassword(){loginPassword.type=loginPassword.type==="password"?"text":"password"}
 async function sellerLogin(){loginMsg.textContent="Ingresando...";const {error}=await sb.auth.signInWithPassword({email:loginEmail.value.trim(),password:loginPassword.value});if(error){loginMsg.textContent="Email o contraseña incorrectos.";return}loginMsg.textContent="";await load()}
 async function sellerRecover(){const mail=loginEmail.value.trim();if(!mail){loginMsg.textContent="Ingresá tu email.";return}recoverBtn.disabled=true;loginMsg.textContent="Enviando acceso...";try{const r=await fetch(U+"/functions/v1/vendedor-preparar-acceso",{method:"POST",headers:{"Content-Type":"application/json",apikey:K},body:JSON.stringify({email:mail})});const j=await r.json();if(r.ok){loginMsg.textContent="Te enviamos un enlace para crear o recuperar tu contraseña. Revisá también Spam y Promociones. Esperá al menos 40 segundos antes de pedir otro."}else if(r.status===429||/40 segundos|rate limit/i.test(j.error||"")){loginMsg.textContent="Ya se envió un correo recientemente. Esperá 40 segundos antes de pedir otro y revisá tu bandeja de entrada, Spam y Promociones."}else{loginMsg.textContent=j.error||"No se pudo enviar el acceso. Intentá nuevamente."}}catch{loginMsg.textContent="No se pudo conectar con el sistema de acceso. Intentá nuevamente."}finally{setTimeout(()=>recoverBtn.disabled=false,40000)}}
 async function sellerLogout(){await sb.auth.signOut();location.reload()}
