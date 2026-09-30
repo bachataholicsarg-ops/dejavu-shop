@@ -53,7 +53,16 @@
       <form id="productForm" class="form" novalidate>
         <div class="field"><input name="nombre" placeholder="Nombre del producto"><div class="error-text" data-error="nombre"></div></div>
         <div class="field"><input name="slug" placeholder="Código / slug (opcional)"><div class="error-text" data-error="slug"></div></div>
-        <div class="field"><input name="categoria" placeholder="Categoría"><div class="error-text" data-error="categoria"></div></div>
+        <div class="field"><select name="categoria">
+<option value="">Elegí una categoría</option>
+<option value="Bebés">Bebés</option>
+<option value="Mascotas">Mascotas</option>
+<option value="Hogar">Hogar</option>
+<option value="Gadgets/electrónica">Gadgets / electrónica</option>
+<option value="Cocina">Cocina</option>
+<option value="Bienestar">Bienestar</option>
+<option value="Ofertas">Ofertas</option>
+</select><div class="error-text" data-error="categoria"></div></div>
         <div class="field"><input name="stock" type="number" min="0" placeholder="Stock (vacío = sin control)"><div class="error-text" data-error="stock"></div></div>
         <div class="field full"><textarea name="descripcion" maxlength="220" placeholder="Breve descripción del producto"></textarea><div class="error-text" data-error="descripcion"></div></div>
         <div class="field"><input name="costo" id="sellerCost" type="number" min="0" step="0.01" placeholder="Costo"><div class="error-text" data-error="costo"></div></div>
