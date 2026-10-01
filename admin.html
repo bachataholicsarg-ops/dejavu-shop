@@ -110,6 +110,26 @@ async function savePricing(){
 }
 function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
 function waLink(phone){const d=String(phone||"").replace(/\D/g,"");return d?"https://wa.me/"+(d.startsWith("54")?d:"54"+d):"#"}
+function orderHealth(x){
+ const estado=String(x.estado||"Nuevo").toLowerCase();
+ const pago=String(x.estado_pago||"pendiente").toLowerCase();
+ if(estado==="cancelado")return{cls:"health-darkred",label:"Cancelado"};
+ if(estado==="entregado"&&pago==="pagado")return{cls:"health-green",label:"Entregado y pagado"};
+ if(estado==="entregado"&&pago!=="pagado")return{cls:"health-orange",label:"Entregado · pago pendiente"};
+ const fecha=x.fecha_entrega_preferida?new Date(x.fecha_entrega_preferida+"T23:59:59"):null;
+ const now=new Date();
+ let days=null;
+ if(fecha)days=Math.ceil((fecha-now)/(1000*60*60*24));
+ if(fecha&&fecha<now)return{cls:"health-darkred",label:pago==="pagado"?"Entrega vencida":"Vencido y sin pagar"};
+ if(days!==null&&days<=1)return{cls:"health-red",label:pago==="pagado"?"Entrega inmediata":"Entrega inmediata · sin pagar"};
+ if(days!==null&&days<=3)return{cls:"health-orange",label:pago==="pagado"?"Entrega próxima":"Entrega próxima · pago pendiente"};
+ if(estado==="preparando")return{cls:"health-yellow",label:pago==="pagado"?"Preparando":"Preparando · pago pendiente"};
+ if(estado==="enviado")return{cls:"health-lime",label:pago==="pagado"?"Enviado":"Enviado · pago pendiente"};
+ if(estado==="confirmado")return{cls:"health-lime",label:pago==="pagado"?"Confirmado y pagado":"Confirmado · pago pendiente"};
+ return{cls:pago==="pagado"?"health-lime":"health-yellow",label:pago==="pagado"?"Nuevo · pagado":"Nuevo · pago pendiente"};
+}
+function paymentBadgeClass(v){v=String(v||"pendiente").toLowerCase();return v==="pagado"?"payment-paid":v==="cancelado"?"payment-cancelled":"payment-pending"}
+function statusBadgeClass(v){v=String(v||"Nuevo").toLowerCase();return v==="entregado"?"status-delivered":v==="enviado"?"status-sent":v==="preparando"?"status-preparing":v==="cancelado"?"status-cancelled":"status-new"}
 function renderOrders(){
  const q=(document.getElementById("orderSearch")?.value||"").toLowerCase();
  const st=document.getElementById("orderStatusFilter")?.value||"";
@@ -118,7 +138,7 @@ function renderOrders(){
    const hay=(x.numero+" "+x.cliente_nombre+" "+x.cliente_whatsapp).toLowerCase().includes(q);
    return hay&&(!st||x.estado===st)&&(!ps||x.estado_pago===ps);
  });
- ordersBody.innerHTML=rows.length?rows.map(x=>"<tr><td><b>"+esc(x.numero)+"</b><br><small>"+new Date(x.creado_en).toLocaleString("es-AR")+"</small></td><td><b>"+esc(x.cliente_nombre)+"</b><br><small>"+esc(x.cliente_whatsapp)+"</small></td><td>"+money(x.total)+"</td><td>"+esc(x.fecha_entrega_preferida||"A coordinar")+"<br><small>"+esc(x.franja_horaria||"Sin horario")+"</small></td><td>"+esc(x.metodo_pago||"coordinar")+"<br><span class='badge'>"+esc(x.estado_pago||"pendiente")+"</span></td><td>"+esc(x.vendedores?.nombre||"-")+"</td><td><span class='badge'>"+esc(x.estado||"Nuevo")+"</span></td><td><div class='actions'><button class='btn primary' onclick=\"openOrder('"+x.id+"')\">Abrir</button><a class='btn whatsapp' href='"+waLink(x.cliente_whatsapp)+"' target='_blank' rel='noopener'>WhatsApp</a></div></td></tr>").join(""):"<tr><td colspan='8'>No hay pedidos con esos filtros.</td></tr>";
+ ordersBody.innerHTML=rows.length?rows.map(x=>{const h=orderHealth(x);return "<tr class='order-row "+h.cls+"'><td><b>"+esc(x.numero)+"</b><br><small>"+new Date(x.creado_en).toLocaleString("es-AR")+"</small><br><span class='order-health "+h.cls+"'>"+h.label+"</span></td><td><b>"+esc(x.cliente_nombre)+"</b><br><small>"+esc(x.cliente_whatsapp)+"</small></td><td>"+money(x.total)+"</td><td>"+esc(x.fecha_entrega_preferida||"A coordinar")+"<br><small>"+esc(x.franja_horaria||"Sin horario")+"</small></td><td>"+esc(x.metodo_pago||"coordinar")+"<br><span class='badge "+paymentBadgeClass(x.estado_pago)+"'>"+esc(x.estado_pago||"pendiente")+"</span></td><td>"+esc(x.vendedores?.nombre||"-")+"</td><td><span class='badge "+statusBadgeClass(x.estado)+"'>"+esc(x.estado||"Nuevo")+"</span></td><td><div class='actions'><button class='btn primary' onclick=\"openOrder('"+x.id+"')\">Abrir</button><a class='btn whatsapp' href='"+waLink(x.cliente_whatsapp)+"' target='_blank' rel='noopener'>WhatsApp</a></div></td></tr>"}).join(""):"<tr><td colspan='8'>No hay pedidos con esos filtros.</td></tr>";
 }
 async function openOrder(id){
  currentOrderId=id;
@@ -133,7 +153,7 @@ async function openOrder(id){
  "<div class='detail-grid'>"+
  "<div class='detail-box'><h3>Cliente</h3><b>"+esc(x.cliente_nombre)+"</b><br>"+esc(x.cliente_whatsapp)+"<br>"+esc(x.cliente_email||"Sin email")+"<br><br><a class='btn whatsapp' href='"+waLink(x.cliente_whatsapp)+"' target='_blank' rel='noopener'>Abrir WhatsApp</a></div>"+
  "<div class='detail-box'><h3>Entrega</h3>"+esc(x.direccion)+" "+esc(x.piso_depto||"")+"<br>"+esc(x.localidad)+" · "+esc(x.codigo_postal||"")+"<br><b>Zona:</b> "+esc(x.zona_envio)+"<br><b>Fecha:</b> "+esc(x.fecha_entrega_preferida||"A coordinar")+"<br><b>Horario:</b> "+esc(x.franja_horaria||"A coordinar")+"<br><small>"+esc(x.referencias||"Sin referencias")+"</small></div>"+
- "<div class='detail-box'><h3>Estado del pedido</h3><select id='detailStatus' class='status-select'><option>Nuevo</option><option>Confirmado</option><option>Preparando</option><option>Enviado</option><option>Entregado</option><option>Cancelado</option></select><h3>Estado del pago</h3><select id='detailPaymentStatus' class='status-select'><option value='pendiente'>Pendiente</option><option value='pagado'>Pagado</option><option value='cancelado'>Cancelado</option></select><p><b>Método:</b> "+esc(x.metodo_pago||"coordinar")+"</p></div>"+
+ "<div class='detail-box'><h3>Estado general</h3><div id='detailHealth'></div><h3>Estado del pedido</h3><select id='detailStatus' class='status-select'><option>Nuevo</option><option>Confirmado</option><option>Preparando</option><option>Enviado</option><option>Entregado</option><option>Cancelado</option></select><h3>Estado del pago</h3><select id='detailPaymentStatus' class='status-select'><option value='pendiente'>Pendiente</option><option value='pagado'>Pagado</option><option value='cancelado'>Cancelado</option></select><p><b>Método:</b> "+esc(x.metodo_pago||"coordinar")+"</p></div>"+
  "<div class='detail-box'><h3>Totales</h3><b>Subtotal:</b> "+money(x.subtotal)+"<br><b>Envío:</b> "+money(x.costo_envio)+"<br><b>Total:</b> "+money(x.total)+"<br><b>Vendedor:</b> "+esc(x.vendedores?.nombre||"-")+"<br><b>Comisión:</b> "+money(x.comision_total)+"</div>"+
  "</div>"+
  "<div class='card'><h3>Productos</h3><table><thead><tr><th>Producto</th><th>Cantidad</th><th>Unitario</th><th>Subtotal</th></tr></thead><tbody>"+itemRows+"</tbody></table></div>"+
@@ -141,6 +161,7 @@ async function openOrder(id){
  "<div id='orderDetailMsg'></div><div class='actions'><button class='btn primary' onclick='saveOrderChanges()'>Guardar cambios</button></div>";
  document.getElementById("detailStatus").value=x.estado||"Nuevo";
  document.getElementById("detailPaymentStatus").value=x.estado_pago||"pendiente";
+ const dh=orderHealth(x);document.getElementById("detailHealth").innerHTML="<span class=\"order-health "+dh.cls+"\">"+dh.label+"</span>";
 }
 function closeOrderModal(){orderModal.classList.remove("open");currentOrderId=null}
 async function saveOrderChanges(){
