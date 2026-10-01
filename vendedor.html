@@ -38,7 +38,9 @@
     <div class="card">
       <h2>Tu enlace para vender</h2>
       <p class="muted">Compartí este enlace. Las compras que entren por él quedan asociadas automáticamente a vos.</p>
-      <div class="linkbox"><input id="salesLink" readonly><button class="btn primary" onclick="copyLink()">Copiar enlace</button></div>
+      <div class="linkbox"><input id="salesLink" readonly><button class="btn primary" onclick="copyLink()">Copiar enlace minorista</button></div>
+<p class="muted" style="margin-top:16px">Tu invitación mayorista</p>
+<div class="linkbox"><input id="wholesaleLink" readonly><button class="btn primary" onclick="copyWholesaleLink()">Copiar enlace mayorista</button></div>
     </div>
   </section>
 
@@ -120,11 +122,11 @@ async function load(){
  kSales.textContent=money(j.resumen.ventas);
  kPending.textContent=money(j.resumen.pendiente);
  kPaid.textContent=money(j.resumen.pagada);
- salesLink.value=location.origin+"/?vendedor="+encodeURIComponent(j.vendedor.codigo);
+ salesLink.value=location.origin+"/?vendedor="+encodeURIComponent(j.vendedor.codigo);wholesaleLink.value=location.origin+"/mayorista.html?vendedor="+encodeURIComponent(j.vendedor.codigo)+"&invite="+encodeURIComponent(j.vendedor.mayorista_token);
  ordersBody.innerHTML=j.pedidos.length?j.pedidos.map(p=>'<tr><td><b>'+esc(p.numero)+'</b></td><td>'+esc(p.cliente_nombre)+'<br><small>'+esc(p.cliente_whatsapp||"")+'</small></td><td>'+(p.items||[]).map(it=>esc(it.cantidad)+" × "+esc(it.producto_nombre)).join("<br>")+'</td><td>'+money(p.total)+'</td><td>'+money(p.comision_total)+'</td><td><span class="badge">'+(p.comision_pagada?'Pagada':'Pendiente')+'</span></td><td><span class="badge">'+esc(p.estado)+'</span><br><small>Pago: '+esc(p.estado_pago||"pendiente")+'</small></td><td>'+new Date(p.creado_en).toLocaleDateString("es-AR")+'</td></tr>').join(""):'<tr><td colspan="8">Todavía no tenés pedidos.</td></tr>';
  paymentsBody.innerHTML=(j.pagos||[]).length?(j.pagos||[]).map(p=>'<tr><td>'+new Date(p.creado_en).toLocaleDateString("es-AR")+'</td><td><b>'+money(p.monto)+'</b></td><td>'+esc(p.nota||'Pago de comisión')+'</td></tr>').join(""):'<tr><td colspan="3">Todavía no hay pagos registrados.</td></tr>';
 }
-async function copyLink(){try{await navigator.clipboard.writeText(salesLink.value);salesLink.select()}catch{}}
+async function copyLink(){try{await navigator.clipboard.writeText(salesLink.value);salesLink.select()}catch{}}async function copyWholesaleLink(){try{await navigator.clipboard.writeText(wholesaleLink.value);wholesaleLink.select()}catch{}}
 
 async function loadProducts(){
  productsBody.innerHTML='<tr><td colspan="6">Cargando productos...</td></tr>';
