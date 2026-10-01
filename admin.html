@@ -3,8 +3,14 @@
 <div class="brand">♛ DÉJÀ VU Admin</div>
 <div id="login" class="card"><h2>Ingresar</h2><p>Ingresá con tu email y contraseña de administrador.</p><input id="email" value="dejavu.shop.ar@gmail.com" type="email" placeholder="Email" style="padding:12px;width:min(360px,100%);border:1px solid var(--line);border-radius:10px;margin-bottom:10px"><br><input id="password" type="password" placeholder="Contraseña" style="padding:12px;width:min(360px,100%);border:1px solid var(--line);border-radius:10px;margin-bottom:10px"><br><button class="btn primary" onclick="loginPassword()">Ingresar</button> <button class="btn secondary" onclick="recoverPassword()">Recuperar contraseña</button><div id="loginMsg" style="margin-top:10px"></div></div>
 <div id="app" class="hidden">
-<div class="tabs"><button class="btn secondary" onclick="show('resumen')">Resumen</button><button class="btn secondary" onclick="show('productos')">Productos</button><button class="btn secondary" onclick="show('pedidos')">Pedidos</button><button class="btn secondary" onclick="show('vendedores')">Vendedores</button><button class="btn secondary" onclick="show('envios')">Envíos</button><button class="btn secondary" onclick="logout()">Salir</button></div>
+<div class="tabs"><button class="btn secondary" onclick="show('resumen')">Resumen</button><button class="btn secondary" onclick="show('productos')">Productos</button><button class="btn secondary" onclick="show('pedidos')">Pedidos</button><button class="btn secondary" onclick="show('vendedores')">Vendedores</button><button class="btn secondary" onclick="show('envios')">Envíos</button><button class="btn secondary" onclick="show('precios')">Precios</button><button class="btn secondary" onclick="logout()">Salir</button></div>
 <section id="resumen" class="section"><div class="grid" id="kpis"></div></section>
+<section id="precios" class="section hidden"><div class="card"><h2>Precios por canal</h2><p class="muted">Los precios públicos se calculan automáticamente desde el costo base de cada producto.</p><div class="form">
+<div><label><b>Recargo minorista (%)</b></label><input id="retailMarkup" type="number" min="0" step="0.01"></div>
+<div><label><b>Recargo mayorista (%)</b></label><input id="wholesaleMarkup" type="number" min="0" step="0.01"></div>
+<div><label><b>Compra mínima mayorista</b></label><input id="wholesaleMinimum" type="number" min="0" step="1"></div>
+<div class="full"><div id="pricingStatus"></div><button class="btn primary" type="button" onclick="savePricing()">Guardar configuración</button></div>
+</div></div></section>
 <section id="productos" class="section hidden">
 <div class="card">
 <h2 id="productTitle">Nuevo producto</h2>
@@ -79,18 +85,29 @@ async function loginPassword(){const {error}=await sb.auth.signInWithPassword({e
 async function boot(){const {data:{session}}=await sb.auth.getSession();if(!session)return;login.classList.add("hidden");app.classList.remove("hidden");await loadAll()}
 async function logout(){await sb.auth.signOut();location.reload()}
 function show(id){document.querySelectorAll(".section").forEach(x=>x.classList.add("hidden"));document.getElementById(id).classList.remove("hidden")}
-async function loadAll(){const [{data:p},{data:o},{data:v},{data:s}]=await Promise.all([
+async function loadAll(){const [{data:p},{data:o},{data:v},{data:s},{data:pc}]=await Promise.all([
  sb.from("productos").select("*").order("nombre"),
  sb.from("pedidos").select("*,vendedores(nombre)").order("creado_en",{ascending:false}),
  sb.from("vendedores").select("*").order("nombre"),
- sb.from("configuracion_envios").select("*").order("zona")
-]);productsCache=p||[];productsBody.innerHTML=productsCache.map(x=>"<tr><td>"+(x.imagen_url?"<img class='thumb' src='"+x.imagen_url+"' alt=''>":"—")+"</td><td><b>"+x.nombre+"</b><br><small>"+(x.categoria||"")+"</small></td><td style='min-width:220px'>"+(x.descripcion||"<small>Sin descripción</small>")+"</td><td>"+(x.proveedor_url?"<a href='"+x.proveedor_url+"' target='_blank' rel='noopener'>Abrir proveedor</a>":"—")+"</td><td>"+(x.costo==null?"<b style='color:#a51f1f'>Sin costo</b>":money(x.costo))+"</td><td>"+(x.precio==null?"<b style='color:#a51f1f'>Sin precio</b>":money(x.precio))+"</td><td>"+(x.stock==null?"Sin control":x.stock)+"</td><td>"+(x.activo?"Activo":"Pausado")+"</td><td><div class='actions'><button class='btn secondary' onclick=\"editProduct('"+x.id+"')\">Editar</button><button class='btn warn' onclick=\"toggleProduct('"+x.id+"',"+x.activo+")\">"+(x.activo?"Pausar":"Activar")+"</button><button class='btn danger' onclick=\"deleteProduct('"+x.id+"')\">Eliminar</button></div></td></tr>").join("");
+ sb.from("configuracion_envios").select("*").order("zona"),
+ sb.from("configuracion_precios").select("*").order("canal")
+]);const retailCfg=(pc||[]).find(x=>x.canal==="minorista"),wholesaleCfg=(pc||[]).find(x=>x.canal==="mayorista");if(retailCfg)retailMarkup.value=retailCfg.porcentaje_recargo;if(wholesaleCfg){wholesaleMarkup.value=wholesaleCfg.porcentaje_recargo;wholesaleMinimum.value=wholesaleCfg.compra_minima}productsCache=p||[];productsBody.innerHTML=productsCache.map(x=>"<tr><td>"+(x.imagen_url?"<img class='thumb' src='"+x.imagen_url+"' alt=''>":"—")+"</td><td><b>"+x.nombre+"</b><br><small>"+(x.categoria||"")+"</small></td><td style='min-width:220px'>"+(x.descripcion||"<small>Sin descripción</small>")+"</td><td>"+(x.proveedor_url?"<a href='"+x.proveedor_url+"' target='_blank' rel='noopener'>Abrir proveedor</a>":"—")+"</td><td>"+(x.costo==null?"<b style='color:#a51f1f'>Sin costo</b>":money(x.costo))+"</td><td>"+(x.precio==null?"<b style='color:#a51f1f'>Sin precio</b>":money(x.precio))+"</td><td>"+(x.stock==null?"Sin control":x.stock)+"</td><td>"+(x.activo?"Activo":"Pausado")+"</td><td><div class='actions'><button class='btn secondary' onclick=\"editProduct('"+x.id+"')\">Editar</button><button class='btn warn' onclick=\"toggleProduct('"+x.id+"',"+x.activo+")\">"+(x.activo?"Pausar":"Activar")+"</button><button class='btn danger' onclick=\"deleteProduct('"+x.id+"')\">Eliminar</button></div></td></tr>").join("");
 ordersCache=o||[];renderOrders();
 const agg={};(o||[]).forEach(x=>{if(x.vendedor_id){agg[x.vendedor_id]??={ventas:0,comision:0,pendiente:0};agg[x.vendedor_id].ventas+=Number(x.subtotal);agg[x.vendedor_id].comision+=Number(x.comision_total);if(!x.comision_pagada)agg[x.vendedor_id].pendiente+=Number(x.comision_total)}});
 sellersCache=v||[];sellersBody.innerHTML=sellersCache.map(x=>"<tr><td><b>"+esc(x.nombre)+"</b><br><small>"+esc(x.email||"")+"</small></td><td>"+esc(x.codigo)+"</td><td>"+x.porcentaje_comision+"%</td><td>"+money(agg[x.id]?.ventas||0)+"</td><td>"+money(agg[x.id]?.comision||0)+"</td><td>"+money(agg[x.id]?.pendiente||0)+"</td><td>"+(x.activo?"Activo":"Pausado")+"</td><td><div class='actions'><button class='btn secondary' onclick=\"editSeller('"+x.id+"')\">Editar</button><button class='btn warn' onclick=\"toggleSeller('"+x.id+"',"+x.activo+")\">"+(x.activo?"Pausar":"Activar")+"</button><button class='btn secondary' onclick=\"copySellerLink('"+x.id+"')\">Copiar link</button><button class='btn primary' onclick=\"sendSellerAccess('"+x.id+"')\">Enviar acceso</button><a class='btn secondary' href='/vendedor.html' target='_blank'>Panel</a>"+((agg[x.id]?.pendiente||0)>0?"<button class='btn primary' onclick=\"paySellerCommissions('"+x.id+"')\">Pagar pendientes</button>":"")+"</div></td></tr>").join("");
 shippingBody.innerHTML=(s||[]).map(x=>"<tr><td>"+x.zona+"</td><td>"+((x.zona==="Campana"||x.zona==="CABA")?"Gratis":"Door to Gate / costo a coordinar")+"</td></tr>").join("");
 kpis.innerHTML="<div class='kpi'>Pedidos<b>"+(o||[]).length+"</b></div><div class='kpi'>Ventas<b>"+money((o||[]).reduce((a,x)=>a+Number(x.total),0))+"</b></div><div class='kpi'>Comisiones<b>"+money((o||[]).reduce((a,x)=>a+Number(x.comision_total),0))+"</b></div><div class='kpi'>Productos<b>"+(p||[]).length+"</b></div>"}
 
+async function savePricing(){
+ const rm=Number(retailMarkup.value),wm=Number(wholesaleMarkup.value),min=Number(wholesaleMinimum.value);
+ if(!Number.isFinite(rm)||rm<0||!Number.isFinite(wm)||wm<0||!Number.isFinite(min)||min<0){pricingStatus.className="order-msg error";pricingStatus.textContent="Revisá los valores.";return}
+ pricingStatus.className="order-msg";pricingStatus.textContent="Guardando...";
+ const now=new Date().toISOString();
+ const {error:e1}=await sb.from("configuracion_precios").update({porcentaje_recargo:rm,actualizado_en:now}).eq("canal","minorista");
+ const {error:e2}=await sb.from("configuracion_precios").update({porcentaje_recargo:wm,compra_minima:min,actualizado_en:now}).eq("canal","mayorista");
+ if(e1||e2){pricingStatus.className="order-msg error";pricingStatus.textContent="No se pudo guardar: "+(e1?.message||e2?.message);return}
+ pricingStatus.className="order-msg ok";pricingStatus.textContent="Configuración guardada. Los nuevos precios se aplican automáticamente en ambas tiendas.";
+}
 function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
 function waLink(phone){const d=String(phone||"").replace(/\D/g,"");return d?"https://wa.me/"+(d.startsWith("54")?d:"54"+d):"#"}
 function renderOrders(){
