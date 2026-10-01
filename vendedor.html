@@ -98,7 +98,7 @@ const U="https://mzcmkcernmklmaerxqxu.supabase.co";
 const K="sb_publishable_FuJzy7ynwi1vHBkwQpQ1vA_Bk6gVZOf";
 const sb=supabase.createClient(U,K,{auth:{storageKey:"dejavu-seller-auth"}});
 const money=n=>new Intl.NumberFormat("es-AR",{style:"currency",currency:"ARS",maximumFractionDigits:0}).format(Number(n||0));
-let products=[],editingProductId=null,currentSeller=null;
+let products=[],editingProductId=null,currentSeller=null,sellerRetailMarkup=50;
 async function authHeaders(){const {data:{session}}=await sb.auth.getSession();return {apikey:K,Authorization:"Bearer "+(session?.access_token||"")}}
 function toggleSellerPassword(){loginPassword.type=loginPassword.type==="password"?"text":"password"}
 async function sellerLogin(){loginMsg.textContent="Ingresando...";const {error}=await sb.auth.signInWithPassword({email:loginEmail.value.trim(),password:loginPassword.value});if(error){loginMsg.textContent="Email o contraseña incorrectos.";return}loginMsg.textContent="";await load()}
@@ -133,7 +133,7 @@ async function loadProducts(){
  const r=await fetch(U+"/functions/v1/vendedor-productos",{headers:await authHeaders()});
  const j=await r.json();
  if(!r.ok){productsBody.innerHTML='<tr><td colspan="6"><div class="error">'+esc(j.error||"No se pudieron cargar los productos.")+'</div></td></tr>';return}
- products=j.productos||[];
+ products=j.productos||[];sellerRetailMarkup=Number(j.porcentaje_minorista||50);
  renderProducts();
 }
 function renderProducts(){
@@ -145,7 +145,7 @@ function status(msg,ok=false){productStatus.className="full status "+(ok?"ok":"e
 function editProduct(id){const p=products.find(x=>x.id===id);if(!p)return;editingProductId=id;productTitle.textContent="Editar producto";productSaveBtn.textContent="Guardar cambios";cancelProductBtn.style.display="inline-block";for(const k of ["nombre","slug","categoria","stock","descripcion","costo","precio","proveedor_url"])productForm.elements[k].value=p[k]??"";if(p.imagen_url){sellerPreview.src=p.imagen_url;sellerPreview.style.display="block"}else sellerPreview.style.display="none";sellerPrice.dataset.manual="1";productForm.scrollIntoView({behavior:"smooth",block:"start"})}
 function cancelProductEdit(){editingProductId=null;productForm.reset();productTitle.textContent="Cargar producto";productSaveBtn.textContent="Guardar producto";cancelProductBtn.style.display="none";sellerPreview.style.display="none";delete sellerPrice.dataset.manual;clearErrors()}
 async function toggleProduct(id,activo){const r=await fetch(U+"/functions/v1/vendedor-productos",{method:"PATCH",headers:{...(await authHeaders()),"Content-Type":"application/json"},body:JSON.stringify({id,activo:!activo})});const j=await r.json();if(!r.ok){status(j.error||"No se pudo cambiar el estado.");return}await loadProducts()}
-sellerCost.addEventListener("input",()=>{if(!sellerPrice.dataset.manual)sellerPrice.value=sellerCost.value?Number(sellerCost.value)*2:""});
+sellerCost.addEventListener("input",()=>{if(!sellerPrice.dataset.manual)sellerPrice.value=sellerCost.value?(Number(sellerCost.value)*(1+sellerRetailMarkup/100)).toFixed(2):""});
 sellerPrice.addEventListener("input",()=>sellerPrice.dataset.manual="1");
 sellerPhoto.addEventListener("change",()=>{const f=sellerPhoto.files?.[0];if(!f)return;sellerPreview.src=URL.createObjectURL(f);sellerPreview.style.display="block"});
 productForm.querySelectorAll("input,textarea,select").forEach(el=>el.addEventListener("input",()=>{el.classList.remove("field-error");const box=productForm.querySelector('[data-error="'+el.name+'"]');if(box)box.textContent=""}));
