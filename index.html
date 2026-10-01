@@ -44,9 +44,10 @@ if(sellerFromUrl)localStorage.setItem("dv-vendedor",sellerFromUrl.toLowerCase())
 const vendedor=localStorage.getItem("dv-vendedor")||"";
 
 async function loadProducts(){
- const {data,error}=await sb.from("productos").select("id,nombre,categoria,descripcion,precio,stock,proveedor_url,imagen_url,activo").eq("activo",true).order("nombre");
- if(error){grid.innerHTML="<p>No se pudo cargar el catálogo.</p>";return}
- P=(data||[]).map(p=>({id:p.id,name:p.nombre,category:p.categoria,description:p.descripcion||"",price:p.precio,stock:p.stock,source:p.proveedor_url,image:p.imagen_url}));
+ const r=await fetch(SUPABASE_URL+"/functions/v1/catalogo?canal=minorista",{headers:{apikey:SUPABASE_KEY}});
+ const j=await r.json();
+ if(!r.ok){grid.innerHTML="<p>No se pudo cargar el catálogo.</p>";return}
+ P=(j.productos||[]).map(p=>({id:p.id,name:p.nombre,category:p.categoria,description:p.descripcion||"",price:p.precio,stock:p.stock,source:p.proveedor_url,image:p.imagen_url}));
  const validIds=new Set(P.map(p=>p.id));let cleaned=false;
  Object.keys(C).forEach(id=>{if(!validIds.has(id)){delete C[id];cleaned=true}});
  if(cleaned)localStorage.setItem("dv-cart",JSON.stringify(C));
