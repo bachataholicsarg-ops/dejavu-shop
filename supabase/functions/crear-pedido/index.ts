@@ -67,7 +67,7 @@ Deno.serve(async (req: Request) => {
     if(jwt){
       const {data:{user},error:authError}=await sb.auth.getUser(jwt);
       if(authError||!user)return Response.json({error:"La sesión venció. Volvé a ingresar o hacé el pedido sin registrarte."},{status:401,headers:cors});
-      body.cliente_auth_id=user.id;
+      body.cliente_auth_id=user.id;body.email=user.email||body.email||"";
       const {data:profile}=await sb.from("clientes_tienda").select("direccion,piso_depto,codigo_postal,referencias").eq("auth_user_id",user.id).maybeSingle();
       if(profile)for(const key of ["direccion","piso_depto","codigo_postal","referencias"])if(!body[key])body[key]=profile[key];
     }

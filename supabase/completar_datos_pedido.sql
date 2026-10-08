@@ -16,6 +16,7 @@ begin
   v_cost:=coalesce(v_cost,0);
   if (v_zone='CABA' and v_order.subtotal>=30000) or (v_zone='Campana' and v_order.subtotal>=40000) then v_cost:=0; end if;
   update public.pedidos set cliente_nombre=trim(p_datos->>'nombre'),cliente_whatsapp=trim(p_datos->>'whatsapp'),
+    cliente_email=nullif(trim(p_datos->>'email'),''),franja_horaria=nullif(trim(p_datos->>'horario_entrega'),''),contacto_preferido=coalesce(nullif(trim(p_datos->>'contacto_preferido'),''),'WhatsApp'),
     direccion=trim(p_datos->>'direccion'),localidad=trim(p_datos->>'localidad'),zona_envio=v_zone,
     piso_depto=trim(coalesce(p_datos->>'piso_depto','')),codigo_postal=trim(coalesce(p_datos->>'codigo_postal','')),
     referencias=trim(coalesce(p_datos->>'referencias','')),cliente_auth_id=coalesce(cliente_auth_id,p_user_id),
@@ -25,6 +26,12 @@ begin
     values(p_user_id,trim(p_datos->>'nombre'),trim(p_datos->>'whatsapp'),trim(p_datos->>'localidad'),trim(p_datos->>'direccion'),trim(coalesce(p_datos->>'piso_depto','')),trim(coalesce(p_datos->>'codigo_postal','')),trim(coalesce(p_datos->>'referencias','')))
     on conflict(auth_user_id) do update set nombre=excluded.nombre,whatsapp=excluded.whatsapp,localidad=excluded.localidad,direccion=excluded.direccion,piso_depto=excluded.piso_depto,codigo_postal=excluded.codigo_postal,referencias=excluded.referencias,actualizado_en=now();
   end if;
+  update public.clientes_tienda set
+    email=trim(coalesce(p_datos->>'email','')),telefono=trim(coalesce(p_datos->>'telefono','')),empresa=trim(coalesce(p_datos->>'empresa','')),
+    provincia=trim(coalesce(p_datos->>'provincia','')),dias_atencion=trim(coalesce(p_datos->>'dias_atencion','')),
+    horario_atencion=trim(coalesce(p_datos->>'horario_atencion','')),horario_entrega=trim(coalesce(p_datos->>'horario_entrega','')),
+    contacto_preferido=coalesce(nullif(trim(p_datos->>'contacto_preferido'),''),'WhatsApp'),actualizado_en=now()
+  where id=(select cliente_id from public.pedidos where id=v_order.id);
   update public.pedido_enlaces_cliente set usado_en=now() where pedido_id=v_order.id;
   return jsonb_build_object('ok',true,'pedido',v_order.numero);
 end;
