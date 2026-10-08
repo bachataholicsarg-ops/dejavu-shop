@@ -23,7 +23,7 @@ declare
   v_pct numeric := 0;
   v_comision numeric := 0;
   v_codigo text := lower(trim(coalesce(p_body->>'vendedor','')));
-  v_zona text := coalesce(nullif(trim(p_body->>'zona_envio'),''), nullif(trim(p_body->>'localidad'),''), 'Resto del país');
+  v_zona text := coalesce(nullif(trim(p_body->>'zona_envio'),''), 'Resto del país');
   v_detalles jsonb := '[]'::jsonb;
   v_items_html text := '';
   v_canal text := lower(trim(coalesce(p_body->>'canal_venta','minorista')));
@@ -161,13 +161,19 @@ begin
   v_numero := case when v_canal='mayorista' then 'MAY-' else 'DV-' end
               || to_char(clock_timestamp(),'YYMMDDHH24MISSMS');
 
+  if nullif(p_body->>'cliente_auth_id','') is not null then
+    insert into public.clientes_tienda(auth_user_id,nombre,whatsapp,localidad)
+    values((p_body->>'cliente_auth_id')::uuid,trim(p_body->>'nombre'),trim(p_body->>'whatsapp'),trim(p_body->>'localidad'))
+    on conflict(auth_user_id) do update set nombre=excluded.nombre,whatsapp=excluded.whatsapp,localidad=excluded.localidad,actualizado_en=now();
+  end if;
+
   insert into public.pedidos(
-    numero,cliente_nombre,cliente_whatsapp,cliente_email,direccion,piso_depto,localidad,
+    cliente_auth_id,numero,cliente_nombre,cliente_whatsapp,cliente_email,direccion,piso_depto,localidad,
     codigo_postal,referencias,zona_envio,fecha_entrega_preferida,franja_horaria,metodo_pago,
     contacto_preferido,subtotal,costo_envio,total,vendedor_id,porcentaje_comision,comision_total,
     estado,estado_pago,canal_venta,cliente_mayorista_id,porcentaje_recargo_aplicado
   ) values (
-    v_numero,trim(p_body->>'nombre'),trim(p_body->>'whatsapp'),nullif(trim(p_body->>'email'),''),
+    nullif(p_body->>'cliente_auth_id','')::uuid,v_numero,trim(p_body->>'nombre'),trim(p_body->>'whatsapp'),nullif(trim(p_body->>'email'),''),
     coalesce(trim(p_body->>'direccion'),''),nullif(trim(p_body->>'piso_depto'),''),trim(p_body->>'localidad'),
     nullif(trim(p_body->>'codigo_postal'),''),nullif(trim(p_body->>'referencias'),''),v_zona,
     nullif(p_body->>'fecha_entrega_preferida','')::date,nullif(trim(p_body->>'franja_horaria'),''),
@@ -236,3 +242,4 @@ exception
     raise exception 'El carrito contiene productos o accesos inválidos';
 end;
 $function$
+

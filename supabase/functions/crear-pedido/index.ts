@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { shippingZone } from "./shipping.js";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -61,6 +62,16 @@ Deno.serve(async (req: Request) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    delete body.cliente_auth_id;
+    const jwt=(req.headers.get("authorization")||"").replace(/^Bearer\s+/i,"");
+    if(jwt){
+      const {data:{user},error:authError}=await sb.auth.getUser(jwt);
+      if(authError||!user)return Response.json({error:"La sesión venció. Volvé a ingresar o hacé el pedido sin registrarte."},{status:401,headers:cors});
+      body.cliente_auth_id=user.id;
+      const {data:profile}=await sb.from("clientes_tienda").select("direccion,piso_depto,codigo_postal,referencias").eq("auth_user_id",user.id).maybeSingle();
+      if(profile)for(const key of ["direccion","piso_depto","codigo_postal","referencias"])if(!body[key])body[key]=profile[key];
+    }
+    body.zona_envio=shippingZone(body.localidad)||(body.canal_venta==="mayorista"&&["CABA","Campana"].includes(body.zona_envio)?body.zona_envio:"Resto del país");
     const { data, error } = await sb.rpc("crear_pedido_atomic", { p_body: body });
     if (error) {
       console.error("crear_pedido_atomic", error);
