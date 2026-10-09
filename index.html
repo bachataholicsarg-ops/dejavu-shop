@@ -27,7 +27,7 @@
 const SUPABASE_KEY="sb_publishable_FuJzy7ynwi1vHBkwQpQ1vA_Bk6gVZOf";
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let P=[],cat="Todos",C=JSON.parse(localStorage.getItem("dv-cart")||"{}");
-const money=n=>new Intl.NumberFormat("es-AR",{style:"currency",currency:"ARS",maximumFractionDigits:0}).format(Number(n||0));
+const money=n=>new Intl.NumberFormat("es-AR",{style:"currency",currency:"ARS",minimumFractionDigits:2,maximumFractionDigits:2}).format(Number(n||0));
 const sellerFromUrl=new URLSearchParams(location.search).get("vendedor");
 if(sellerFromUrl)localStorage.setItem("dv-vendedor",sellerFromUrl.toLowerCase());
 const vendedor=localStorage.getItem("dv-vendedor")||"";
