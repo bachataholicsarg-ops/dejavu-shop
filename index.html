@@ -11,11 +11,11 @@
 <div class="field full"><label>Nombre<input name="nombre" required autocomplete="name" placeholder="Tu nombre"></label><div class="error-text" data-order-error="nombre"></div></div>
 <div class="field"><label>WhatsApp<input name="whatsapp" required type="tel" autocomplete="tel" placeholder="Tu número de WhatsApp"></label><div class="error-text" data-order-error="whatsapp"></div></div>
 <div class="field"><label>Localidad<input name="localidad" required list="checkoutLocalidades" autocomplete="address-level2" placeholder="Tu localidad"></label><div class="error-text" data-order-error="localidad"></div></div>
-<datalist id="checkoutLocalidades"><option value="Capital Federal (CABA)"><option value="Campana"></datalist><p class="full">Los detalles de entrega y pago los coordinamos con vos por WhatsApp.</p>
+<datalist id="checkoutLocalidades"><option value="Capital Federal (CABA)"><option value="Campana"></datalist><p class="full">Elegí pagar al momento o enviar primero tu pedido. Si el envío tiene costo, confirmamos el total por WhatsApp antes de cobrar.</p>
 <div class="full summary"><b>Resumen de tu compra</b><div id="checkoutItems"></div><button type="button" class="btn clearcart" onclick="clearCart()">Eliminar compra</button></div>
 <div class="full summary" id="shippingSummary"></div>
 <div id="checkoutStatus" class="full"></div>
-<button class="checkout full" id="submitOrderBtn" type="submit">Confirmar pedido</button>
+<div class="full actions"><button class="checkout" id="submitOrderBtn" type="submit" name="accion" value="pedido">Enviar pedido primero</button><button class="checkout" id="payOrderBtn" type="submit" name="accion" value="pagar">Pagar ahora con Mercado Pago</button></div><p class="full" id="payShippingHint" role="status"></p>
 </form><div id="orderResult" style="margin-top:14px;font-weight:800"></div></div></div><script>
 (function(){
   const h=location.hash||"";
@@ -23,7 +23,7 @@
     location.replace("/reset-password.html"+h);
   }
 })();
-</script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script>const SUPABASE_URL="https://mzcmkcernmklmaerxqxu.supabase.co";
+</script><script src="/assets/order-flow.js"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script>const SUPABASE_URL="https://mzcmkcernmklmaerxqxu.supabase.co";
 const SUPABASE_KEY="sb_publishable_FuJzy7ynwi1vHBkwQpQ1vA_Bk6gVZOf";
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let P=[],cat="Todos",C=JSON.parse(localStorage.getItem("dv-cart")||"{}");
@@ -85,9 +85,15 @@ function updateShipping(){
  const s=amount;
  if(typeof checkoutItems!=="undefined"&&checkoutItems) checkoutItems.innerHTML="<ul class=\"order-summary-list\">"+Object.entries(C).map(([id,q])=>{const p=P.find(x=>x.id===id);return p?"<li>"+q+" × "+p.name+" — "+money(Number(p.price||0)*q)+"</li>":""}).join("")+"</ul><b>Total de productos: "+money(s)+"</b>";
 }
+function updatePayHint(){
+ const z=window.dvShipping.shippingZone(orderForm.elements.localidad.value),amount=subtotal();
+ const free=(z==='CABA'&&amount>=30000)||(z==='Campana'&&amount>=40000);
+ payShippingHint.textContent=free?'Tu envío es gratis. Podés pagar el total ahora.':'Si el envío tiene costo, primero guardamos el pedido y confirmamos el total por WhatsApp.';
+}
+orderForm.elements.localidad.addEventListener('input',updatePayHint);
 function checkout(){
  if(!Object.keys(C).length)return alert("Tu carrito está vacío");
- toggleCart(false);orderForm.style.display="grid";orderResult.innerHTML="";clearOrderErrors();checkoutModal.classList.add("open");updateShipping();
+ toggleCart(false);orderForm.style.display="grid";orderResult.innerHTML="";clearOrderErrors();checkoutModal.classList.add("open");updateShipping();updatePayHint();
 }
 document.addEventListener("input",e=>{if(e.target.id==="search")render()});
 document.addEventListener("input",e=>{if(e.target.name==="localidad")updateShipping()});
@@ -96,23 +102,33 @@ function orderFieldError(name,msg){const el=orderForm.elements[name];if(el)el.cl
 function validateOrderForm(){clearOrderErrors();let bad=false;const f=Object.fromEntries(new FormData(orderForm));if(!String(f.nombre||"").trim()){orderFieldError("nombre","Ingresá tu nombre.");bad=true}const digits=String(f.whatsapp||"").replace(/\D/g,"");if(digits.length<8){orderFieldError("whatsapp","Ingresá un WhatsApp válido.");bad=true}if(!String(f.localidad||"").trim()){orderFieldError("localidad","Ingresá la localidad.");bad=true}if(bad){checkoutStatus.className="full checkout-status error";checkoutStatus.textContent="Revisá los campos marcados en rojo.";return null}return f}
 orderForm.querySelectorAll("input,select,textarea").forEach(el=>el.addEventListener("input",()=>{el.classList.remove("field-error");const box=orderForm.querySelector('[data-order-error="'+el.name+'"]');if(box)box.textContent=""}));
 orderForm.addEventListener("submit",async e=>{
+ const payNow=e.submitter?.value==="pagar";
  e.preventDefault();const data=validateOrderForm();if(!data)return;
  const items=Object.entries(C).map(([producto_id,cantidad])=>({producto_id,cantidad}));
  if(!items.length){checkoutStatus.className="full checkout-status error";checkoutStatus.textContent="Tu carrito está vacío.";return}
  const {data:{session}}=await sb.auth.getSession();
  const body={...data,items,vendedor,metodo_pago:"coordinar",contacto_preferido:"WhatsApp"};
 
- orderForm.querySelectorAll(".clearcart").forEach(el=>el.disabled=true);submitOrderBtn.disabled=true;submitOrderBtn.textContent="Guardando pedido...";checkoutStatus.className="full checkout-status";checkoutStatus.textContent="Procesando...";
+ orderForm.querySelectorAll(".clearcart").forEach(el=>el.disabled=true);submitOrderBtn.disabled=true;payOrderBtn.disabled=true;submitOrderBtn.textContent="Guardando pedido...";checkoutStatus.className="full checkout-status";checkoutStatus.textContent="Procesando...";
  try{
    const r=await fetch(SUPABASE_URL+"/functions/v1/crear-pedido",{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_KEY,...(session?{Authorization:"Bearer "+session.access_token}:{})},body:JSON.stringify(body)});
    const j=await r.json();
    if(!r.ok){checkoutStatus.className="full checkout-status error";checkoutStatus.textContent=j.error||"No se pudo crear el pedido";return}
    const shipping=window.dvShipping.shippingText(j.subtotal??subtotal(),j.zona_envio||data.localidad);
    orderForm.style.display="none";
-   orderResult.innerHTML="<div class=\"confirm-box\"><div style=\"font-size:42px\">✓</div><h3>Pedido recibido</h3><p><b>"+j.pedido+"</b></p><p>Total de productos: <b>"+money(j.subtotal??j.total)+"</b></p><p>"+shipping+"</p><p>Nos vamos a estar contactando con vos a través de WhatsApp para completar los detalles de tu pedido.</p><button class=\"checkout\" type=\"button\" onclick=\"checkoutModal.classList.remove('open')\">Cerrar</button></div>";
-   orderResult.style.color="#21633c";C={};save();await loadProducts();
+   orderResult.innerHTML="<div class='confirm-box'><div style='font-size:42px'>✓</div><h3>Pedido recibido</h3><p data-order-number></p><p>Total de productos: <b data-order-total></b></p><p data-order-shipping></p><p>Nos contactaremos por WhatsApp para completar los detalles de tu pedido.</p><p data-pay-status role='status'></p><div class='actions'><button class='checkout' type='button' data-pay-order>Pagar con Mercado Pago</button><button class='btn' type='button' onclick=\"checkoutModal.classList.remove('open')\">Cerrar</button></div></div>";
+   orderResult.querySelector('[data-order-number]').textContent=j.pedido;
+   orderResult.querySelector('[data-order-total]').textContent=money(j.subtotal??j.total);
+   orderResult.querySelector('[data-order-shipping]').textContent=shipping;
+   const payButton=orderResult.querySelector('[data-pay-order]');
+   payButton.hidden=!j.pago_token;
+   payButton.onclick=()=>dvPayOrder(j.pago_token,orderResult);
+   orderResult.style.color="#21633c";C={};save();
+   if(payNow&&j.pago_token)await dvPayOrder(j.pago_token,orderResult);
+   else if(payNow)orderResult.querySelector('[data-pay-status]').textContent='Tu pedido se guardó. Te enviaremos el enlace de pago por WhatsApp.';
+   await loadProducts();
  }catch(err){checkoutStatus.className="full checkout-status error";checkoutStatus.textContent="No se pudo conectar con el sistema de pedidos. Intentá nuevamente."}
- finally{orderForm.querySelectorAll(".clearcart").forEach(el=>el.disabled=false);submitOrderBtn.disabled=false;submitOrderBtn.textContent="Confirmar pedido"}
+ finally{orderForm.querySelectorAll(".clearcart").forEach(el=>el.disabled=false);submitOrderBtn.disabled=false;payOrderBtn.disabled=false;submitOrderBtn.textContent="Enviar pedido primero"}
 });
 async function loadCustomer(){
  try{const {data:{user}}=await sb.auth.getUser();if(!user)return;

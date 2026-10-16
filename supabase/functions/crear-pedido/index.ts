@@ -1,5 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { shippingZone } from "./shipping.js";
 
 const cors = {
@@ -38,6 +38,31 @@ async function trySendSellerEmail(sb:any,pedidoId:string){
   }catch(e:any){
     await sb.from("notificaciones_email").update({estado:"error",error:e?.message||"Error de envío"}).eq("id",notif.id);
     return {sent:false,reason:e?.message||"send_error"};
+  }
+}
+
+
+async function trySendOrderTelegram(sb:any,pedidoId:string){
+  const token=Deno.env.get("TELEGRAM_BOT_TOKEN");
+  const chatId=Deno.env.get("TELEGRAM_CHAT_ID");
+  if(!token||!chatId) return;
+  try{
+    const {data:pedido,error}=await sb.from("pedidos")
+      .select("numero,total").eq("id",pedidoId).single();
+    if(error||!pedido){console.error("telegram_order_lookup_failed");return;}
+    const amount=new Intl.NumberFormat("es-AR",{style:"currency",currency:"ARS"}).format(Number(pedido.total||0));
+    const message=["🛒 Nuevo pedido en Déjà Vu","Pedido: "+pedido.numero,"Total: "+amount,"Revisalo en https://dejavu-shop.vercel.app/admin.html"].join("\n");
+    const response=await fetch("https://api.telegram.org/bot"+token+"/sendMessage",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({chat_id:chatId,text:message,link_preview_options:{is_disabled:true}}),
+      signal:AbortSignal.timeout(5000)
+    });
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok||!result.ok)console.error("telegram_order_send_failed",response.status);
+  }catch{
+    // Never log request URLs: they contain the bot credential.
+    console.error("telegram_order_notification_failed");
   }
 }
 
@@ -81,12 +106,28 @@ Deno.serve(async (req: Request) => {
       return Response.json({ error: "No se pudo crear el pedido. Revisá los datos e intentá nuevamente." }, { status: 500, headers: cors });
     }
 
+    if(data?.pedido_id){
+      EdgeRuntime.waitUntil(trySendOrderTelegram(sb,String(data.pedido_id)));
+    }
+
     let sellerEmail:any={sent:false,reason:"sin_vendedor"};
     if(data?.pedido_id && data?.vendedor_id){
       sellerEmail=await trySendSellerEmail(sb,String(data.pedido_id));
     }
 
-    return Response.json({...data,notificacion_vendedor:sellerEmail}, { headers: cors });
+    // A random payment capability is returned only to the browser that created this order.
+    // Failure here must not turn a successfully saved order into a retry/duplicate.
+    let pago_token: string | null = null;
+    if(data?.pedido_id){
+      try {
+        const value=Array.from(crypto.getRandomValues(new Uint8Array(32))).map(v=>v.toString(16).padStart(2,"0")).join("");
+        const token_hash=Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(value)))).map(v=>v.toString(16).padStart(2,"0")).join("");
+        const {error:linkError}=await sb.from("pedido_enlaces_pago").insert({pedido_id:data.pedido_id,token_hash,vence_en:new Date(Date.now()+7*86400000).toISOString()});
+        if(!linkError)pago_token=value;
+        else console.error("payment_link_creation_failed");
+      }catch{console.error("payment_link_creation_failed");}
+    }
+    return Response.json({...data,pago_token,notificacion_vendedor:sellerEmail}, { headers: {...cors,"Cache-Control":"no-store"} });
   } catch (e) {
     console.error(e);
     return Response.json({ error: "No se pudo crear el pedido" }, { status: 500, headers: cors });
