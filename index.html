@@ -116,7 +116,7 @@ orderForm.addEventListener("submit",async e=>{
    if(!r.ok){checkoutStatus.className="full checkout-status error";checkoutStatus.textContent=j.error||"No se pudo crear el pedido";return}
    const shipping=window.dvShipping.shippingText(j.subtotal??subtotal(),j.zona_envio||data.localidad);
    orderForm.style.display="none";
-   orderResult.innerHTML="<div class='confirm-box'><div style='font-size:42px'>✓</div><h3>Pedido recibido</h3><p data-order-number></p><p>Total de productos: <b data-order-total></b></p><p data-order-shipping></p><p>Nos contactaremos por WhatsApp para completar los detalles de tu pedido.</p><p data-pay-status role='status'></p><div class='actions'><button class='checkout' type='button' data-pay-order>Pagar con Mercado Pago</button><button class='btn' type='button' onclick=\"checkoutModal.classList.remove('open')\">Cerrar</button></div></div>";
+   orderResult.innerHTML="<div class='confirm-box'><div style='font-size:42px'>✓</div><h3>Pedido recibido</h3><p data-order-number></p><p>Total de productos: <b data-order-total></b></p><p data-order-shipping></p><p>Te enviaremos por WhatsApp el detalle de los productos, las cantidades, el total confirmado y el enlace para pagar con Mercado Pago.</p><p data-pay-status role='status'></p><div class='actions'><button class='checkout' type='button' data-pay-order>Pagar con Mercado Pago</button><button class='btn' type='button' onclick=\"checkoutModal.classList.remove('open')\">Cerrar</button></div></div>";
    orderResult.querySelector('[data-order-number]').textContent=j.pedido;
    orderResult.querySelector('[data-order-total]').textContent=money(j.subtotal??j.total);
    orderResult.querySelector('[data-order-shipping]').textContent=shipping;

@@ -162,7 +162,7 @@ function renderOrders(){
    const hay=(x.numero+" "+x.cliente_nombre+" "+x.cliente_whatsapp).toLowerCase().includes(q);
    return hay&&(!st||x.estado===st)&&(!ps||x.estado_pago===ps);
  });
- ordersBody.innerHTML=rows.length?rows.map(x=>{const h=orderHealth(x);return "<tr class='order-row "+h.cls+"'><td><b>"+esc(x.numero)+"</b><br><small>"+new Date(x.creado_en).toLocaleString("es-AR")+"</small><br><span class='order-health "+h.cls+"'>"+h.label+"</span></td><td><b>"+esc(x.cliente_nombre)+"</b><br><small>"+esc(x.cliente_whatsapp)+"</small></td><td>"+money(x.total)+"</td><td>"+esc(x.fecha_entrega_preferida||"A coordinar")+"<br><small>"+esc(x.franja_horaria||"Sin horario")+"</small></td><td>"+esc(x.metodo_pago||"coordinar")+"<br><span class='badge "+paymentBadgeClass(x.estado_pago)+"'>"+esc(x.estado_pago||"pendiente")+"</span></td><td>"+esc(x.vendedores?.nombre||"-")+"</td><td><span class='badge "+statusBadgeClass(x.estado)+"'>"+esc(x.estado||"Nuevo")+"</span></td><td><div class='actions'><button class='btn primary' onclick=\"openOrder('"+x.id+"')\">Abrir</button><a class='btn whatsapp' href='"+esc(orderReplyUrl(x))+"' target='_blank' rel='noopener'>Responder WhatsApp</a><button class='btn danger' onclick=\"deleteOrder('"+x.id+"')\">Eliminar</button></div></td></tr>"}).join(""):"<tr><td colspan='8'>No hay pedidos con esos filtros.</td></tr>";
+ ordersBody.innerHTML=rows.length?rows.map(x=>{const h=orderHealth(x);return "<tr class='order-row "+h.cls+"'><td><b>"+esc(x.numero)+"</b><br><small>"+new Date(x.creado_en).toLocaleString("es-AR")+"</small><br><span class='order-health "+h.cls+"'>"+h.label+"</span></td><td><b>"+esc(x.cliente_nombre)+"</b><br><small>"+esc(x.cliente_whatsapp)+"</small></td><td>"+money(x.total)+"</td><td>"+esc(x.fecha_entrega_preferida||"A coordinar")+"<br><small>"+esc(x.franja_horaria||"Sin horario")+"</small></td><td>"+esc(x.metodo_pago||"coordinar")+"<br><span class='badge "+paymentBadgeClass(x.estado_pago)+"'>"+esc(x.estado_pago||"pendiente")+"</span></td><td>"+esc(x.vendedores?.nombre||"-")+"</td><td><span class='badge "+statusBadgeClass(x.estado)+"'>"+esc(x.estado||"Nuevo")+"</span></td><td><div class='actions'><button class='btn primary' onclick=\"openOrder('"+x.id+"')\">Abrir</button><button class='btn whatsapp' onclick=\"prepareOrderReply('"+x.id+"')\">Responder WhatsApp</button><button class='btn danger' onclick=\"deleteOrder('"+x.id+"')\">Eliminar</button></div></td></tr>"}).join(""):"<tr><td colspan='8'>No hay pedidos con esos filtros.</td></tr>";
 }
 async function openOrder(id){
  currentOrderId=id;
@@ -172,7 +172,9 @@ async function openOrder(id){
  orderModal.classList.add("open");
  const {data:items,error}=await sb.from("pedido_items").select("*").eq("pedido_id",id).order("producto_nombre");
  if(error){orderDetail.innerHTML="<div class='order-msg error'>No se pudieron cargar los productos: "+esc(error.message)+"</div>";return}
- const itemRows=(items||[]).map(it=>"<tr><td>"+esc(it.producto_nombre)+"</td><td>"+it.cantidad+"</td><td>"+money(it.precio_unitario)+"</td><td>"+money(it.subtotal)+"</td></tr>").join("");
+ if(currentOrderId!==id)return;
+ x.items=items||[];
+ const itemRows=x.items.map(it=>"<tr><td>"+esc(it.producto_nombre)+"</td><td>"+it.cantidad+"</td><td>"+money(it.precio_unitario)+"</td><td>"+money(it.subtotal)+"</td></tr>").join("");
  orderDetail.innerHTML=
  "<div class='detail-grid'>"+
  "<div class='detail-box'><h3>Cliente</h3><b>"+esc(x.cliente_nombre)+"</b><br>"+esc(x.cliente_whatsapp)+"<br>"+esc(x.cliente_email||"Sin email")+"<br><br><button class='btn primary' type='button' onclick='createCustomerLink()'>Enlace para completar datos</button><div id='customerLinkResult' class='order-msg'></div><br><a class='btn whatsapp' href='"+esc(orderReplyUrl(x))+"' target='_blank' rel='noopener'>Responder por WhatsApp</a></div>"+

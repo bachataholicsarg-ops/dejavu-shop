@@ -2,9 +2,23 @@
 const orderPaymentLinks=new Map();
 function orderReplyText(order,payment){
  const lines=['Hola '+order.cliente_nombre+' 💛 Gracias por tu pedido '+order.numero+' en Déjà Vu.'];
- if(payment)lines.push('Total a pagar: '+money(payment.total)+'.','Podés pagar por Mercado Pago acá: '+payment.url,'Si preferís coordinar primero, respondé este mensaje y te ayudamos.');
- else lines.push('Recibimos tu pedido. Vamos a confirmar la entrega y el total con vos por este chat.');
+ if(order.items?.length){
+  lines.push('Detalle de tu compra:\n'+order.items.map(item=>
+   '• '+item.cantidad+' × '+item.producto_nombre+' — '+money(item.precio_unitario)+' c/u · '+money(item.subtotal)
+  ).join('\n'));
+ }
+ if(order.subtotal!=null)lines.push('Total de productos: '+money(order.subtotal));
+ if(payment){
+  const shipping=Number(payment.total)-Number(order.subtotal);
+  if(order.subtotal!=null&&Number.isFinite(shipping)&&shipping>=0)lines.push(shipping===0?'Envío: sin cargo.':'Envío: '+money(shipping));
+  lines.push('TOTAL A PAGAR: '+money(payment.total),'Pagá tu pedido de forma segura con Mercado Pago:\n'+payment.url,'Cuando completes el pago, lo verificamos y coordinamos la entrega. Si tenés alguna consulta, respondé este mensaje.');
+ }else lines.push('Vamos a confirmar la entrega y te compartimos por este chat el enlace de pago con el total final.');
  return lines.join('\n\n');
+}
+async function prepareOrderReply(id){
+ await openOrder(id);
+ document.getElementById('mpPaymentPanel')?.scrollIntoView({behavior:'smooth',block:'start'});
+ document.getElementById('mpDraft')?.focus({preventScroll:true});
 }
 function orderReplyUrl(order){return waLink(order.cliente_whatsapp)+'?text='+encodeURIComponent(orderReplyText(order,orderPaymentLinks.get(order.id)));}
 let deletingOrder=false;

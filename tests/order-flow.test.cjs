@@ -21,4 +21,15 @@ test('checkout saves one order before opening payment; payment failure retains r
  await c.orderResult.querySelector('[data-pay-order]').onclick();assert.equal(saves,1);assert.equal(pays,2);
 });
 test('WhatsApp contains the order, confirmed total and payment link',()=>{const c=context('<html></html>');c.money=n=>'$'+n;c.waLink=n=>'https://wa.me/'+n;vm.runInContext(read('assets/order-flow.js'),c);const text=c.orderReplyText({cliente_nombre:'Ana',numero:'DV-TEST'},{url:'https://www.mercadopago.com.ar/test',total:40000});assert.match(text,/DV-TEST/);assert.match(text,/40000/);assert.match(text,/mercadopago/)});
+test('WhatsApp itemizes saved quantities, unit prices, shipping and confirmed total',()=>{
+ const c=context('<html></html>');c.money=n=>'$'+n;vm.runInContext(read('assets/order-flow.js'),c);
+ const order={cliente_nombre:'Ana',numero:'DV-25',subtotal:13500,items:[{producto_nombre:'Taza café',cantidad:2,precio_unitario:5000,subtotal:10000},{producto_nombre:'Vaso',cantidad:1,precio_unitario:3500,subtotal:3500}]};
+ const text=c.orderReplyText(order,{total:15000,url:'https://www.mercadopago.com.ar/pay'});
+ for(const part of ['2 × Taza café — $5000 c/u · $10000','1 × Vaso — $3500 c/u · $3500','Total de productos: $13500','Envío: $1500','TOTAL A PAGAR: $15000','https://www.mercadopago.com.ar/pay'])assert.ok(text.includes(part),part);
+});
+test('pending shipping never presents subtotal as the final payable total',()=>{
+ const c=context('<html></html>');c.money=n=>'$'+n;vm.runInContext(read('assets/order-flow.js'),c);
+ const text=c.orderReplyText({cliente_nombre:'Ana',numero:'DV-25',subtotal:10000,items:[{producto_nombre:'Taza',cantidad:2,precio_unitario:5000,subtotal:10000}]});
+ assert.match(text,/2 × Taza/);assert.match(text,/Total de productos: \$10000/);assert.match(text,/confirmar la entrega/);assert.doesNotMatch(text,/TOTAL A PAGAR/);
+});
 test('deletion requires confirmation and detects denied database updates',async()=>{const c=context('<html></html>');c.ordersCache=[{id:'test',numero:'DV-TEST'}];let writes=0,loads=0;c.sb={from:()=>{writes++;const q={update:()=>q,eq:()=>q,is:()=>q,select:()=>q,single:async()=>({error:{message:'denied'}})};return q}};c.loadAll=async()=>loads++;c.confirm=()=>false;let error='';c.alert=s=>error=s;vm.runInContext(read('assets/order-flow.js'),c);await c.deleteOrder('test');assert.equal(writes,0);c.confirm=()=>true;await c.deleteOrder('test');assert.equal(writes,1);assert.equal(loads,0);assert.match(error,/denied/)});
